@@ -1,0 +1,484 @@
+﻿<#
+	void ReadUInt8(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte <#= nameof(ReadUInt8) #>(this <#= className #> self)  => self.Read();
+<#
+	}
+#>
+<#
+	void ReadInt8(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static sbyte <#= nameof(ReadInt8) #>(this <#= className #> self) => (sbyte)self.Read();
+<#
+	}
+#>
+<#
+	void WriteUInt8(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteUInt8) #>(this <#= className #> self, byte value){
+            self.Write(value);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void WriteInt8(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteInt8) #>(this <#= className #> self, sbyte value){ 
+            self.Write((byte)value);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadBoolean(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool <#= nameof(ReadBoolean) #>(this <#= className #> self) => self.ReadUInt8() != 0;
+<#
+	}
+#>
+<#
+	void WriteBoolean(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteBoolean) #>(this <#= className #> self, bool value){
+            self.Write(value ? (byte)1 : (byte)0);
+            <#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadUInt16(string className, bool bigEndian) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static UInt16 <#= nameof(ReadUInt16) #>(this <#= className #> self){
+            var span = self.span;
+<#
+		if (bigEndian) {
+#>
+            var t = (UInt16)(span[1] | (span[0] << 8));
+<#
+		} else {
+#>
+            var t = (UInt16)(span[0] | (span[1] << 8));
+<#
+		}
+#>
+            self.Advance(2);
+
+			return t;
+        }
+<#
+	}
+#>
+<#
+	void WriteUInt16(string className, bool returnSelf, bool bigEndian) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteUInt16) #>(this <#= className #> self, UInt16 value) {
+			var span = self.GetSpan(2);
+<#
+		if (bigEndian) {
+#>
+            span[0] = (byte)(value >> 8);
+			span[1] = (byte)value;
+<#
+		} else {
+#>
+            span[1] = (byte)(value >> 8);
+			span[0] = (byte)value;
+<#
+		}
+#>
+			self.Advance(2);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadInt16(string className, bool bigEndian) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Int16 <#= nameof(ReadInt16) #>(this <#= className #> self){
+            var span = self.span;
+<#
+		if (bigEndian) {
+#>
+            var t = (Int16)(span[1] | (span[0] << 8));
+<#
+		} else {
+#>
+            var t = (Int16)(span[0] | (span[1] << 8));
+<#
+		}
+#>
+            self.Advance(2);
+
+			return t;
+        }
+<#
+	}
+#>
+<#
+	void WriteInt16(string className, bool returnSelf, bool bigEndian) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteInt16) #>(this <#= className #> self, Int16 value) {
+			var span = self.GetSpan(2);
+<#
+		if (bigEndian) {
+#>
+            span[0] = (byte)(value >> 8);
+			span[1] = (byte)value;
+<#
+		} else {
+#>
+            span[1] = (byte)(value >> 8);
+			span[0] = (byte)value;
+<#
+		}
+#>
+			self.Advance(2);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadInt(string className, bool bigEndian, string typeName, int typeBytesCount) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= typeName #> Read<#= typeName #>(this <#= className #> self) {
+			var t = Unsafe.ReadUnaligned<<#= typeName #>>(ref MemoryMarshal.GetReference(self.span));
+			if (<#= bigEndian ? "" : "!" #>BitConverter.IsLittleEndian) {
+				t = BinaryPrimitives.ReverseEndianness(t);
+			}
+            self.Advance(<#= typeBytesCount #>);
+
+			return t;
+        }
+<#
+	}
+#>
+<#
+	void WriteInt(string className, bool returnSelf, bool bigEndian, string typeName, int typeBytesCount) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> Write<#= typeName #>(this <#= className #> self, <#= typeName #> value) {
+			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(self.GetSpan(<#= typeBytesCount #>)), <#= bigEndian ? "" : "!" #>BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
+            self.Advance(<#= typeBytesCount #>);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadFloat(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe float <#= nameof(ReadFloat) #>(this <#= className #> self) {
+            var t = self.ReadInt32();
+			return *(float*) &t;
+        }
+<#
+	}
+#>
+<#
+	void WriteFloat(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteFloat) #>(this <#= className #> self, float value) => self.WriteInt32(*(int*) &value);
+<#
+	}
+#>
+<#
+	void ReadDouble(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe double <#= nameof(ReadDouble) #>(this <#= className #> self) {
+            var t = self.ReadInt64();
+			return *(double*) &t;
+        }
+<#
+	}
+#>
+<#
+	void WriteDouble(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteDouble) #>(this <#= className #> self, double value) => self.WriteInt64(*(long*) &value);
+<#
+	}
+#>
+<#
+	void ReadVarUInt32(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint <#= nameof(ReadVarUInt32) #>(this <#= className #> self) {
+            uint value = 0;
+			for(var shift = 0; shift < 32; shift += 7){
+				var t = self.Read();
+				value |= (uint)(t & 0b01111111) << shift;
+				if ((t & 0b10000000) == 0) {
+					break;
+				}
+			}
+			return value;
+        }
+<#
+	}
+#>
+<#
+	void ReadVarInt32(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int <#= nameof(ReadVarInt32) #>(this <#= className #> self) => ZigZagUtils.DecodeZigZag32(self.<#= nameof(ReadVarUInt32) #>());
+<#
+	}
+#>
+<#
+	void WriteVarUInt32(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarUInt32) #>(this <#= className #> self, uint value) {
+			while (value >= 0b10000000) {
+				self.Write((byte)(value | 0b10000000));
+				value >>= 7;
+			}
+			self.Write((byte)value);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void WriteVarInt32(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt32) #>(this <#= className #> self, int value) => self.<#= nameof(WriteVarUInt32) #>(ZigZagUtils.EncodeZigZag32(value));
+<#
+	}
+#>
+<#
+	void ReadVarUInt64(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong <#= nameof(ReadVarUInt64) #>(this <#= className #> self) {
+            ulong value = 0;
+			for(var shift = 0; shift < 64; shift += 7){
+				var t = self.Read();
+				value |= (ulong)(t & 0b01111111) << shift;
+				if ((t & 0b10000000) == 0) {
+					break;
+				}
+			}
+			return value;
+        }
+<#
+	}
+#>
+<#
+	void ReadVarInt64(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long <#= nameof(ReadVarInt64) #>(this <#= className #> self) => ZigZagUtils.DecodeZigZag64(self.<#= nameof(ReadVarUInt64) #>());
+<#
+	}
+#>
+<#
+	void WriteVarUInt64(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarUInt64) #>(this <#= className #> self, ulong value) {
+			while (value >= 0b10000000) {
+				self.Write((byte)(value | 0b10000000));
+				value >>= 7;
+			}
+			self.Write((byte)value);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void WriteVarInt64(string className, bool returnSelf) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt64) #>(this <#= className #> self, long value){ 
+            self.<#= nameof(WriteVarUInt64) #>(ZigZagUtils.EncodeZigZag64(value));
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>
+<#
+	void ReadUtf8(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string <#= nameof(ReadUtf8) #>(this <#= className #> self, int len) {
+            if (len == 0) return string.Empty;
+            if (len > self.readableCount) throw new("error in ReadUtf8 => read data overflow");
+
+            var t = System.Text.Encoding.UTF8.GetString(self.GetSpan(len));
+            self.Advance(len);
+            return t;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string <#= nameof(ReadUtf8) #>(this <#= className #> self) => self.ReadUtf8(self.ReadUInt16());
+<#
+	}
+#>
+<#
+	void ReadUtf8ToEnd(string className) {
+#>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string <#= nameof(ReadUtf8ToEnd) #>(this <#= className #> self) {
+			var len = self.readableCount;
+            if (len == 0) return string.Empty;
+
+            var t = System.Text.Encoding.UTF8.GetString(self.GetSpan(len));
+            self.Advance(len);
+            return t;
+        }
+<#
+	}
+#>
+<#
+	void WriteUtf8(string className, bool returnSelf) {
+#>
+
+        public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value, int bytesCount) {
+			if (string.IsNullOrEmpty(value)) {
+                return <#= returnSelf ? "self" : "" #>;
+			}
+			fixed(char* source = value){
+			    fixed (byte* target = self.GetSpan(bytesCount)) {
+				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
+			    }
+            }
+			self.Advance(bytesCount);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+
+        public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value) {
+			if (string.IsNullOrEmpty(value)) {
+				self.WriteInt16(0);
+                return <#= returnSelf ? "self" : "" #>;
+			}
+			
+			var bytesCount   = System.Text.Encoding.UTF8.GetByteCount(value);
+			self.WriteInt16((short)bytesCount);
+
+			fixed(char* source = value){
+			    fixed (byte* target = self.GetSpan(bytesCount)) {
+				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
+			    }
+            }
+			self.Advance(bytesCount);
+<#
+		if (returnSelf) {
+#>
+            return self;
+<#
+		}
+#>
+        }
+<#
+	}
+#>

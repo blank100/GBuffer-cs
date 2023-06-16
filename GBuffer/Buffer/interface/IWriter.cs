@@ -25,9 +25,19 @@ namespace Gal.Core
         /// </summary>
         Memory<T> writtenMemory { get; }
 
+        /// <summary>
+        /// 获取当前位置到结尾的 Span&lt;T&gt;
+        /// </summary>
         Span<T> span { get; }
+
+        /// <summary>
+        /// 获取当前位置到结尾的 Memory&lt;T&gt;
+        /// </summary>
         Memory<T> memory { get; }
 
+        /// <summary>
+        /// 获取原始数组
+        /// </summary>
         T[] rawArray { get; }
 
         T this[int index] { set; }

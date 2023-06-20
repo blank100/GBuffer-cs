@@ -132,6 +132,7 @@ namespace Gal.Core
         /// 在当前位置写入一个元素,并将 position 向后移动1位
         /// </summary>
         /// <param name="element"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(T element) {
             var t = m_Span;
             var p = m_Position;
@@ -152,6 +153,7 @@ namespace Gal.Core
         /// </summary>
         /// <param name="element1"></param>
         /// <param name="element2"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(T element1, T element2) {
             var t = m_Span;
             var p = m_Position;
@@ -174,6 +176,7 @@ namespace Gal.Core
         /// <param name="element1"></param>
         /// <param name="element2"></param>
         /// <param name="element3"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(T element1, T element2, T element3) {
             var t = m_Span;
             var p = m_Position;
@@ -192,9 +195,94 @@ namespace Gal.Core
         }
 
         /// <summary>
+        /// 在当前位置写入三个元素,并将 position 向后移动3位
+        /// </summary>
+        /// <param name="element1"></param>
+        /// <param name="element2"></param>
+        /// <param name="element3"></param>
+        /// <param name="element4"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(T element1, T element2, T element3, T element4) {
+            var t = m_Span;
+            var p = m_Position;
+            var n = p + 4;
+            if (n > t.Length) {
+                GrowBuffer(4);
+                t = m_Span;
+            }
+
+            t[p] = element1;
+            t[p + 1] = element2;
+            t[p + 2] = element3;
+            t[p + 3] = element4;
+
+            m_Position = n;
+            if (m_Length < n) m_Length = n;
+        }
+
+        /// <summary>
+        /// 在当前位置写入三个元素,并将 position 向后移动3位
+        /// </summary>
+        /// <param name="element1"></param>
+        /// <param name="element2"></param>
+        /// <param name="element3"></param>
+        /// <param name="element4"></param>
+        /// <param name="element5"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(T element1, T element2, T element3, T element4, T element5) {
+            var t = m_Span;
+            var p = m_Position;
+            var n = p + 5;
+            if (n > t.Length) {
+                GrowBuffer(5);
+                t = m_Span;
+            }
+
+            t[p] = element1;
+            t[p + 1] = element2;
+            t[p + 2] = element3;
+            t[p + 3] = element4;
+            t[p + 4] = element5;
+
+            m_Position = n;
+            if (m_Length < n) m_Length = n;
+        }
+
+        /// <summary>
+        /// 在当前位置写入三个元素,并将 position 向后移动3位
+        /// </summary>
+        /// <param name="element1"></param>
+        /// <param name="element2"></param>
+        /// <param name="element3"></param>
+        /// <param name="element4"></param>
+        /// <param name="element5"></param>
+        /// <param name="element6"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(T element1, T element2, T element3, T element4, T element5, T element6) {
+            var t = m_Span;
+            var p = m_Position;
+            var n = p + 6;
+            if (n > t.Length) {
+                GrowBuffer(6);
+                t = m_Span;
+            }
+
+            t[p] = element1;
+            t[p + 1] = element2;
+            t[p + 2] = element3;
+            t[p + 3] = element4;
+            t[p + 4] = element5;
+            t[p + 5] = element6;
+
+            m_Position = n;
+            if (m_Length < n) m_Length = n;
+        }
+
+        /// <summary>
         /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
         /// </summary>
         /// <param name="elements"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<T> elements) {
             var count = elements.Length;
 
@@ -214,6 +302,7 @@ namespace Gal.Core
         /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
         /// </summary>
         /// <param name="elements"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlyMemory<T> elements) {
             var count = elements.Length;
 
@@ -235,6 +324,7 @@ namespace Gal.Core
         /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
         /// </summary>
         /// <param name="elements"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySequence<T> elements) {
             var count = (int)elements.Length;
 

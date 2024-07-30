@@ -369,7 +369,7 @@ namespace Gal.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GenerateBuffer(int size) {
             var buffer = ArrayPool<T>.Shared.Rent(size);
-            m_Buffer.AsSpan(0, m_Length).CopyTo(buffer);
+            m_Buffer.AsSpan(0, Math.Min(m_Length, m_Buffer.Length)).CopyTo(buffer);
             ArrayPool<T>.Shared.Return(m_Buffer);
             m_Buffer = buffer;
         }

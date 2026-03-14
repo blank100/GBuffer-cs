@@ -1,24 +1,22 @@
-﻿using System;
-
-namespace Gal.Core
+﻿namespace Gal.Core
 {
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <para>author gouanlin</para>
+    /// <author>gouanlin</author>
     public interface IReader<T> : IDisposable
     {
-        int length { get; }
-        int position { get; set; }
+        int Length { get; }
+        int Position { get; set; }
 
         /// <summary>
         /// 剩余可读取长度
         /// </summary>
-        int readableCount { get; }
+        int ReadableCount { get; }
 
-        ReadOnlyMemory<T> memory { get; }
-        ReadOnlySpan<T> span { get; }
+        ReadOnlyMemory<T> Memory { get; }
+        ReadOnlySpan<T> Span { get; }
 
         T this[int index] { get; }
 

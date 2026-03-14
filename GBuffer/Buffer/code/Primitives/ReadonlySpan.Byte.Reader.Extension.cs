@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -8,7 +7,7 @@ namespace Gal.Core
 	/// <summary>
 	/// 
 	/// </summary>
-	/// <para>author gouanlin</para>
+	/// <author>gouanlin</author>
 	public static class ReadonlySpanByteReaderExtension
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,30 +103,20 @@ namespace Gal.Core
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static uint ReadVarUInt32(this ref ReadOnlySpan<byte> self) {
-			unsafe {
-				fixed (byte* bytes = self) {
-					var t = bytes;
-					var result = BytesReader.ReadVarUInt32(ref t);
-					self = self[(int)(t - bytes)..];
-					return result;
-				}
-			}
+		public static uint ReadVarUInt32(this ref ReadOnlySpan<byte> span) {
+			var t = SpanByteUtils.ReadVarUInt32(span, out var c);
+			span = span[c..];
+			return t;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static int ReadVarInt32(this ref ReadOnlySpan<byte> self) => ZigZagUtils.DecodeZigZag32(self.ReadVarUInt32());
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static ulong ReadVarUInt64(this ref ReadOnlySpan<byte> self) {
-			unsafe {
-				fixed (byte* bytes = self) {
-					var t = bytes;
-					var result = BytesReader.ReadVarUInt64(ref t);
-					self = self[(int)(t - bytes)..];
-					return result;
-				}
-			}
+		public static ulong ReadVarUInt64(this ref ReadOnlySpan<byte> span) {
+			var t = SpanByteUtils.ReadVarUInt64(span, out var c);
+			span = span[c..];
+			return t;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

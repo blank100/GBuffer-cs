@@ -1,0 +1,220 @@
+# ======================================================
+# EditorConfig
+# ======================================================
+root = true
+
+# ======================================================
+# Global
+# ======================================================
+[*]
+
+indent_style = space
+indent_size = 4
+tab_width = 4
+end_of_line = crlf
+charset = utf-8-bom
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+max_line_length = 200
+
+
+# ======================================================
+# C#
+# ======================================================
+[*.cs]
+
+# ------------------------------------------------------
+# Braces / newline style
+# ------------------------------------------------------
+
+csharp_new_line_before_open_brace = none
+
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+
+csharp_new_line_between_query_expression_clauses = true
+
+
+# ------------------------------------------------------
+# Indentation
+# ------------------------------------------------------
+
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+
+# ------------------------------------------------------
+# var preferences
+# ------------------------------------------------------
+
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+
+# ------------------------------------------------------
+# expression-bodied members
+# ------------------------------------------------------
+
+csharp_style_expression_bodied_methods = true:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+
+
+# ------------------------------------------------------
+# target typed new
+# ------------------------------------------------------
+
+csharp_style_prefer_target_typed_new_expressions = true:suggestion
+dotnet_diagnostic.IDE0090.severity = suggestion
+
+
+# ------------------------------------------------------
+# parentheses clarity
+# ------------------------------------------------------
+
+csharp_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:suggestion
+csharp_style_parentheses_in_relational_binary_operators = always_for_clarity:suggestion
+csharp_style_parentheses_in_other_binary_operators = always_for_clarity:suggestion
+csharp_style_parentheses_in_other_operators = never_if_unnecessary:suggestion
+
+
+# ------------------------------------------------------
+# Using directives
+# ------------------------------------------------------
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+
+# ======================================================
+# Naming rules
+# ======================================================
+
+# Interface: IPascalCase
+
+dotnet_naming_rule.interface_should_be_prefixed.severity = suggestion
+dotnet_naming_rule.interface_should_be_prefixed.symbols = interface_symbols
+dotnet_naming_rule.interface_should_be_prefixed.style = interface_prefix
+
+dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+
+dotnet_naming_style.interface_prefix.required_prefix = I
+dotnet_naming_style.interface_prefix.capitalization = pascal_case
+
+
+# Local variables camelCase
+
+dotnet_naming_rule.locals_camel_case.severity = suggestion
+dotnet_naming_rule.locals_camel_case.symbols = local_symbols
+dotnet_naming_rule.locals_camel_case.style = camel_style
+
+dotnet_naming_symbols.local_symbols.applicable_kinds = local
+
+dotnet_naming_style.camel_style.capitalization = camel_case
+
+
+# Parameters camelCase
+
+dotnet_naming_rule.parameters_camel_case.severity = suggestion
+dotnet_naming_rule.parameters_camel_case.symbols = parameter_symbols
+dotnet_naming_rule.parameters_camel_case.style = camel_style
+
+dotnet_naming_symbols.parameter_symbols.applicable_kinds = parameter
+
+
+# Private fields _camelCase
+
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_underscore.symbols = private_field_symbols
+dotnet_naming_rule.private_fields_underscore.style = underscore_style
+
+dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private
+
+dotnet_naming_style.underscore_style.required_prefix = _
+dotnet_naming_style.underscore_style.capitalization = camel_case
+
+
+# Public members PascalCase
+
+dotnet_naming_rule.public_members_pascal.severity = suggestion
+dotnet_naming_rule.public_members_pascal.symbols = public_symbols
+dotnet_naming_rule.public_members_pascal.style = pascal_style
+
+dotnet_naming_symbols.public_symbols.applicable_accessibilities = public
+dotnet_naming_symbols.public_symbols.applicable_kinds = property,method,event,field
+
+dotnet_naming_style.pascal_style.capitalization = pascal_case
+
+
+# ======================================================
+# Performance analyzers
+# ======================================================
+
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1825.severity = suggestion
+dotnet_diagnostic.CA1829.severity = suggestion
+
+dotnet_diagnostic.CA1835.severity = suggestion
+dotnet_diagnostic.CA1837.severity = suggestion
+
+dotnet_diagnostic.CA1845.severity = suggestion
+
+dotnet_diagnostic.CA1852.severity = suggestion
+dotnet_diagnostic.CA1854.severity = suggestion
+dotnet_diagnostic.CA1859.severity = suggestion
+
+
+# ======================================================
+# Code quality
+# ======================================================
+
+dotnet_diagnostic.CA1062.severity = suggestion
+dotnet_diagnostic.CA1305.severity = suggestion
+dotnet_diagnostic.CA1310.severity = suggestion
+
+dotnet_diagnostic.CA1508.severity = suggestion
+
+dotnet_diagnostic.CA2000.severity = suggestion
+dotnet_diagnostic.CA2007.severity = suggestion
+
+
+# ======================================================
+# Nullable / modern C#
+# ======================================================
+
+dotnet_diagnostic.CS8600.severity = suggestion
+dotnet_diagnostic.CS8602.severity = suggestion
+dotnet_diagnostic.CS8603.severity = suggestion
+
+
+# ======================================================
+# Style analyzers
+# ======================================================
+
+dotnet_diagnostic.IDE0005.severity = suggestion
+dotnet_diagnostic.IDE0007.severity = suggestion
+dotnet_diagnostic.IDE0008.severity = suggestion
+
+dotnet_diagnostic.IDE0011.severity = suggestion
+dotnet_diagnostic.IDE0028.severity = suggestion
+dotnet_diagnostic.IDE0031.severity = suggestion
+
+dotnet_diagnostic.IDE0044.severity = suggestion
+dotnet_diagnostic.IDE0051.severity = suggestion
+
+dotnet_diagnostic.IDE0060.severity = suggestion
+dotnet_diagnostic.IDE0066.severity = suggestion
+
+dotnet_diagnostic.IDE0071.severity = suggestion
+dotnet_diagnostic.IDE0072.severity = suggestion
+
+dotnet_diagnostic.IDE0090.severity = suggestion

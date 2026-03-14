@@ -1,439 +1,406 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Gal.Core
 {
-    /// <summary>
-    /// 栈上的 Writer 
-    /// </summary>
-    /// <para>author gouanlin</para>
-    /// <typeparam name="T"></typeparam>
-    public ref struct RefWriter<T>
-    {
-        //默认容量
-        public const int DEFAULT_CAPACITY = 256;
+	/// <summary>
+	/// 栈上的 Writer
+	/// </summary>
+	/// <author>gouanlin</author>
+	/// <typeparam name="T"></typeparam>
+	public ref struct RefWriter<T>
+	{
+		private T[] _buffer;
+		private Span<T> _span;
+		private int _position;
+		private int _length;
 
-        private T[] m_Buffer;
-        private Span<T> m_Span;
-        private int m_Position;
-        private int m_Length;
+		/// <summary>
+		/// 长度
+		/// </summary>
+		public int Length {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _length;
+			set {
+				Debug.Assert(value >= 0, $"{nameof(Length)} cannot be less than 0");
 
-        /// <summary>
-        /// 长度
-        /// </summary>
-        public int length {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Length;
-            set {
-                Debug.Assert(value >= 0, $"{nameof(length)} cannot be less than 0");
+				_length = value;
+				if (value > _span.Length) GrowBuffer(value - _span.Length);
+				else if (value < _position) _position = value;
+			}
+		}
 
-                m_Length = value;
-                if (value > m_Span.Length) GrowBuffer(value - m_Span.Length);
-                else if (value < m_Position) m_Position = value;
-            }
-        }
+		/// <summary>
+		/// 当前位置
+		/// </summary>
+		public int Position {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _position;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set {
+				Debug.Assert(0 <= value && value <= _span.Length, $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
 
-        /// <summary>
-        /// 当前位置
-        /// </summary>
-        public int position {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set {
-                Debug.Assert(0 <= value && value <= m_Buffer.Length, $"{nameof(position)} cannot be less than 0 or greater than {nameof(length)}");
+				_position = value;
+			}
+		}
 
-                m_Position = value;
-            }
-        }
+		/// <summary>
+		/// 容量
+		/// </summary>
+		public int Capacity {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _span.Length;
+		}
 
-        /// <summary>
-        /// 容量
-        /// </summary>
-        public int capacity {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Span.Length;
-        }
+		/// <summary>
+		/// 长度减去当前位置
+		/// </summary>
+		public int Remaining {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _length - _position;
+		}
 
-        /// <summary>
-        /// 长度减去当前位置
-        /// </summary>
-        public int remaining {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Length - m_Position;
-        }
+		/// <summary>
+		/// 获取已写入数据的 memory
+		/// <para>即从 0 到 length 的 memory</para>
+		/// </summary>
+		public Memory<T> WrittenMemory {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get {
+				if (_buffer == null) GenerateBuffer(_span.Length);
+				return _buffer.AsMemory(0, _length);
+			}
+		}
 
-        /// <summary>
-        /// 获取已写入数据的 memory
-        /// <para>即从 0 到 length 的 memory</para>
-        /// </summary>
-        public Memory<T> writtenMemory {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
-                if (m_Buffer == null) GenerateBuffer(m_Span.Length);
-                return m_Buffer.AsMemory(0, m_Length);
-            }
-        }
+		/// <summary>
+		/// 获取 memory
+		/// <para>即当前位置到 capacity 的 memory</para>
+		/// </summary>
+		public Memory<T> Memory {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get {
+				if (_buffer == null) GenerateBuffer(_span.Length);
+				return _buffer.AsMemory(_position);
+			}
+		}
 
-        /// <summary>
-        /// 获取 memory
-        /// <para>即当前位置到 capacity 的 memory</para>
-        /// </summary>
-        public Memory<T> memory {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
-                if (m_Buffer == null) GenerateBuffer(m_Span.Length);
-                return m_Buffer.AsMemory(m_Position);
-            }
-        }
+		/// <summary>
+		/// 获取已写入数据的 span
+		/// <para>即从 0 到 length 的 span</para>
+		/// </summary>
+		public Span<T> WrittenSpan {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _span[.._length];
+		}
 
-        /// <summary>
-        /// 获取已写入数据的 span
-        /// <para>即从 0 到 length 的 span</para>
-        /// </summary>
-        public Span<T> writtenSpan {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Span[..m_Length];
-        }
+		/// <summary>
+		/// 获取 span
+		/// <para>即当前位置到 capacity 的 span</para>
+		/// </summary>
+		public Span<T> Span {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _span[_position..];
+		}
 
-        /// <summary>
-        /// 获取 span
-        /// <para>即当前位置到 capacity 的 span</para>
-        /// </summary>
-        public Span<T> span {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Span[m_Position..];
-        }
+		public RefWriter(Span<T> buffer) {
+			_buffer = default;
+			_span = buffer;
+			_position = 0;
+			_length = 0;
+		}
 
-        public RefWriter(Span<T> buffer) {
-            m_Buffer = default;
-            m_Span = buffer;
-            m_Position = 0;
-            m_Length = 0;
-        }
+		public RefWriter(int capacity) {
+			Debug.Assert(capacity >= 0, $"The parameter {nameof(capacity)} cannot be negative");
 
-        public RefWriter(int capacity = DEFAULT_CAPACITY) {
-            Debug.Assert(capacity >= 0, $"The parameter {nameof(capacity)} cannot be negative");
+			_buffer = ArrayPool<T>.Shared.Rent(capacity);
+			_span = _buffer;
+			_position = 0;
+			_length = 0;
+		}
 
-            m_Buffer = ArrayPool<T>.Shared.Rent(capacity);
-            m_Span = m_Buffer;
-            m_Position = 0;
-            m_Length = 0;
-        }
+		public T this[int index] {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _span[index];
+		}
 
-        public T this[int index] {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Span[index];
-        }
+		/// <summary>
+		/// 在当前位置写入一个元素,并将 position 向后移动1位
+		/// </summary>
+		/// <param name="element"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element) {
+			var t = _span;
+			var p = _position;
+			var n = p + 1;
+			if (n > t.Length) {
+				GrowBuffer(1);
+				t = _span;
+			}
 
-        /// <summary>
-        /// 在当前位置写入一个元素,并将 position 向后移动1位
-        /// </summary>
-        /// <param name="element"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 1;
-            if (n > t.Length) {
-                GrowBuffer(1);
-                t = m_Span;
-            }
+			t[p] = element;
 
-            t[p] = element;
+			_position = n;
+			if (_length < n) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入两个元素,并将 position 向后移动2位
+		/// </summary>
+		/// <param name="element1"></param>
+		/// <param name="element2"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element1, T element2) {
+			var p = _position;
+			HintSize(2);
 
-        /// <summary>
-        /// 在当前位置写入两个元素,并将 position 向后移动2位
-        /// </summary>
-        /// <param name="element1"></param>
-        /// <param name="element2"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element1, T element2) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 2;
-            if (n > t.Length) {
-                GrowBuffer(2);
-                t = m_Span;
-            }
+			ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), p);
+			Unsafe.Add(ref b, 0) = element1;
+			Unsafe.Add(ref b, 1) = element2;
 
-            t[p] = element1;
-            t[p + 1] = element2;
+			var n = p + 2;
+			_position = n;
+			if (n > _length) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// </summary>
+		/// <param name="element1"></param>
+		/// <param name="element2"></param>
+		/// <param name="element3"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element1, T element2, T element3) {
+			var p = _position;
+			HintSize(3);
 
-        /// <summary>
-        /// 在当前位置写入三个元素,并将 position 向后移动3位
-        /// </summary>
-        /// <param name="element1"></param>
-        /// <param name="element2"></param>
-        /// <param name="element3"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element1, T element2, T element3) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 3;
-            if (n > t.Length) {
-                GrowBuffer(3);
-                t = m_Span;
-            }
+			ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), p);
+			Unsafe.Add(ref b, 0) = element1;
+			Unsafe.Add(ref b, 1) = element2;
+			Unsafe.Add(ref b, 2) = element3;
 
-            t[p] = element1;
-            t[p + 1] = element2;
-            t[p + 2] = element3;
+			var n = p + 3;
+			_position = n;
+			if (n > _length) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// </summary>
+		/// <param name="element1"></param>
+		/// <param name="element2"></param>
+		/// <param name="element3"></param>
+		/// <param name="element4"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element1, T element2, T element3, T element4) {
+			var p = _position;
+			HintSize(4);
 
-        /// <summary>
-        /// 在当前位置写入三个元素,并将 position 向后移动3位
-        /// </summary>
-        /// <param name="element1"></param>
-        /// <param name="element2"></param>
-        /// <param name="element3"></param>
-        /// <param name="element4"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element1, T element2, T element3, T element4) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 4;
-            if (n > t.Length) {
-                GrowBuffer(4);
-                t = m_Span;
-            }
+			ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), p);
+			Unsafe.Add(ref b, 0) = element1;
+			Unsafe.Add(ref b, 1) = element2;
+			Unsafe.Add(ref b, 2) = element3;
+			Unsafe.Add(ref b, 3) = element4;
 
-            t[p] = element1;
-            t[p + 1] = element2;
-            t[p + 2] = element3;
-            t[p + 3] = element4;
+			var n = p + 4;
+			_position = n;
+			if (n > _length) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// </summary>
+		/// <param name="element1"></param>
+		/// <param name="element2"></param>
+		/// <param name="element3"></param>
+		/// <param name="element4"></param>
+		/// <param name="element5"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element1, T element2, T element3, T element4, T element5) {
+			var p = _position;
+			HintSize(5);
 
-        /// <summary>
-        /// 在当前位置写入三个元素,并将 position 向后移动3位
-        /// </summary>
-        /// <param name="element1"></param>
-        /// <param name="element2"></param>
-        /// <param name="element3"></param>
-        /// <param name="element4"></param>
-        /// <param name="element5"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element1, T element2, T element3, T element4, T element5) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 5;
-            if (n > t.Length) {
-                GrowBuffer(5);
-                t = m_Span;
-            }
+			ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), p);
+			Unsafe.Add(ref b, 0) = element1;
+			Unsafe.Add(ref b, 1) = element2;
+			Unsafe.Add(ref b, 2) = element3;
+			Unsafe.Add(ref b, 3) = element4;
+			Unsafe.Add(ref b, 4) = element5;
 
-            t[p] = element1;
-            t[p + 1] = element2;
-            t[p + 2] = element3;
-            t[p + 3] = element4;
-            t[p + 4] = element5;
+			var n = p + 5;
+			_position = n;
+			if (n > _length) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// </summary>
+		/// <param name="element1"></param>
+		/// <param name="element2"></param>
+		/// <param name="element3"></param>
+		/// <param name="element4"></param>
+		/// <param name="element5"></param>
+		/// <param name="element6"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(T element1, T element2, T element3, T element4, T element5, T element6) {
+			var p = _position;
+			HintSize(6);
 
-        /// <summary>
-        /// 在当前位置写入三个元素,并将 position 向后移动3位
-        /// </summary>
-        /// <param name="element1"></param>
-        /// <param name="element2"></param>
-        /// <param name="element3"></param>
-        /// <param name="element4"></param>
-        /// <param name="element5"></param>
-        /// <param name="element6"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(T element1, T element2, T element3, T element4, T element5, T element6) {
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + 6;
-            if (n > t.Length) {
-                GrowBuffer(6);
-                t = m_Span;
-            }
+			ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), p);
+			Unsafe.Add(ref b, 0) = element1;
+			Unsafe.Add(ref b, 1) = element2;
+			Unsafe.Add(ref b, 2) = element3;
+			Unsafe.Add(ref b, 3) = element4;
+			Unsafe.Add(ref b, 4) = element5;
+			Unsafe.Add(ref b, 5) = element6;
 
-            t[p] = element1;
-            t[p + 1] = element2;
-            t[p + 2] = element3;
-            t[p + 3] = element4;
-            t[p + 4] = element5;
-            t[p + 5] = element6;
+			var n = p + 6;
+			_position = n;
+			if (n > _length) _length = n;
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
+		/// </summary>
+		/// <param name="elements"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(ReadOnlySpan<T> elements) {
+			var count = elements.Length;
+			if(count == 0) return;
+			HintSize(count);
+			elements.CopyTo(_span[_position..]);
+			Advance(count);
+		}
 
-        /// <summary>
-        /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
-        /// </summary>
-        /// <param name="elements"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<T> elements) {
-            var count = elements.Length;
+		/// <summary>
+		/// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
+		/// </summary>
+		/// <param name="elements"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(ReadOnlyMemory<T> elements) {
+			var count = elements.Length;
+			if(count == 0) return;
+			HintSize(count);
+			elements.Span.CopyTo(_span[_position..]);
+			Advance(count);
+		}
 
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + count;
-            if (n > t.Length) {
-                GrowBuffer(count);
-                t = m_Span;
-            }
-            elements.CopyTo(t[p..]);
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
+		/// </summary>
+		/// <param name="elements"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Write(ReadOnlySequence<T> elements) {
+			var count = (int)elements.Length;
+			if(count == 0) return;
+			HintSize(count);
+			elements.CopyTo(_span[_position..]);
+			Advance(count);
+		}
 
-        /// <summary>
-        /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
-        /// </summary>
-        /// <param name="elements"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlyMemory<T> elements) {
-            var count = elements.Length;
+		/// <summary>
+		/// 增长 buffer
+		/// </summary>
+		/// <param name="growSize">增长的长度</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void GrowBuffer(int growSize) {
+			var len = _span.Length;
+			GenerateBuffer(checked(len + Math.Max(growSize, len)));
+		}
 
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + count;
-            if (n > t.Length) {
-                GrowBuffer(count);
-                t = m_Span;
-            }
+		/// <summary>
+		/// 生成新的 buffer ,并回收原 buffer
+		/// </summary>
+		/// <param name="size"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void GenerateBuffer(int size) {
+			var buffer = ArrayPool<T>.Shared.Rent(size);
+			_span[..Math.Min(_length, _span.Length)].CopyTo(buffer);
+			if (_buffer != null) ArrayPool<T>.Shared.Return(_buffer, !typeof(T).IsValueType);
+			_span = _buffer = buffer;
+		}
 
-            elements.Span.CopyTo(t[p..]);
+		/// <summary>
+		/// 指针向后移动
+		/// </summary>
+		/// <param name="count"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Advance(int count) {
+			Debug.Assert(_position + count >= 0, $"移动后的指针位置不能未负数");
+			Debug.Assert(_position + count <= _span.Length, "移动后的指针位置超出了buffer的容量");
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
 
-        /// <summary>
-        /// 在当前位置写入一个元素序列,并将 position 向后移动到新的位置
-        /// </summary>
-        /// <param name="elements"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySequence<T> elements) {
-            var count = (int)elements.Length;
+			var t = _position += count;
+			if (_length < t) _length = t;
+		}
 
-            var t = m_Span;
-            var p = m_Position;
-            var n = p + count;
-            if (n > t.Length) {
-                GrowBuffer(count);
-                t = m_Span;
-            }
+		/// <summary>
+		/// 清理
+		/// <para>不会真实的清理所有元素,只是将 position 和 length 置为 0 </para>
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Clear() => Length = 0;
 
-            elements.CopyTo(t[p..]);
+		/// <summary>
+		/// 获取 span
+		/// </summary>
+		/// <param name="sizeHint">需要的 span 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 span </param>
+		/// <returns></returns>
+		public Span<T> GetSpan(int sizeHint = 0) {
+			Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
+			if (sizeHint == 0) return _span[_position..];
+			HintSize(sizeHint);
+			return _span[_position..];
+		}
 
-            m_Position = n;
-            if (m_Length < n) m_Length = n;
-        }
+		/// <summary>
+		/// 获取 memory
+		/// </summary>
+		/// <param name="sizeHint">需要的 memory 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 memory </param>
+		/// <returns></returns>
+		public Memory<T> GetMemory(int sizeHint = 0) {
+			Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
 
-        /// <summary>
-        /// 增长 buffer
-        /// </summary>
-        /// <param name="growSize">增长的长度</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GrowBuffer(int growSize) {
-            var len = m_Span.Length;
-            GenerateBuffer(checked(len + Math.Max(growSize, len)));
-        }
+			if (sizeHint == 0) {
+				if (_buffer == null) GenerateBuffer(_span.Length);
+				return _buffer.AsMemory(_position);
+			}
+			var availableSize = _span.Length - _position;
+			if (availableSize < sizeHint) GrowBuffer(sizeHint - availableSize);
+			else if (_buffer == null) GenerateBuffer(_span.Length);
+			return _buffer.AsMemory(_position);
+		}
 
-        /// <summary>
-        /// 生成新的 buffer ,并回收原 buffer
-        /// </summary>
-        /// <param name="size"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GenerateBuffer(int size) {
-            var buffer = ArrayPool<T>.Shared.Rent(size);
-            m_Span[..Math.Min(m_Length, m_Span.Length)].CopyTo(buffer);
-            if (m_Buffer != null) ArrayPool<T>.Shared.Return(m_Buffer);
-            m_Span = m_Buffer = buffer;
-        }
+		/// <summary>
+		/// 提示需要指定长度的空间
+		/// <para>即从当前位置到 capacity 需要指定长度的空间,不足则扩充 buffer 到足够长度</para>
+		/// </summary>
+		/// <param name="sizeHint"></param>
+		public void HintSize(int sizeHint) {
+			Debug.Assert(sizeHint > 0, $"The parameter of {nameof(sizeHint)} must be greater than 0");
 
-        /// <summary>
-        /// 指针向后移动
-        /// </summary>
-        /// <param name="count"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Advance(int count) {
-            Debug.Assert(count >= 0, $"The parameter of {nameof(count)} cannot be negative");
-            Debug.Assert(m_Position + count <= m_Span.Length, "The length of the moved buffer exceeds the capacity of the buffer");
+			var availableSize = _span.Length - _position;
+			if (availableSize >= sizeHint) return;
+			GrowBuffer(sizeHint - availableSize);
+		}
 
-            var t = m_Position += count;
-            if (m_Length < t) m_Length = t;
-        }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Dispose() {
+			var buffer = _buffer;
+			this = default;
+			if (buffer != null) ArrayPool<T>.Shared.Return(buffer, !typeof(T).IsValueType);
+		}
 
-        /// <summary>
-        /// 清理
-        /// <para>不会真实的清理所有元素,只是将 position 和 length 置为 0 </para>
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Clear() => length = 0;
-
-        /// <summary>
-        /// 获取 memory
-        /// </summary>
-        /// <param name="sizeHint">需要的 memory 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 memory </param>
-        /// <returns></returns>
-        public Memory<T> GetMemory(int sizeHint = 0) {
-            Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
-
-            if (sizeHint == 0) {
-                if (m_Buffer == null) GenerateBuffer(m_Span.Length);
-                return m_Buffer.AsMemory(m_Position);
-            }
-            var availableSize = m_Span.Length - m_Position;
-            if (availableSize < sizeHint) GrowBuffer(sizeHint - availableSize);
-            else if (m_Buffer == null) GenerateBuffer(m_Span.Length);
-            return m_Buffer.AsMemory(m_Position, sizeHint);
-        }
-
-        /// <summary>
-        /// 获取 span
-        /// </summary>
-        /// <param name="sizeHint">需要的 memory 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 span </param>
-        /// <returns></returns>
-        public Span<T> GetSpan(int sizeHint = 0) {
-            Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
-
-            if (sizeHint == 0) return m_Span.Slice(m_Position);
-            var availableSize = m_Span.Length - m_Position;
-            if (availableSize < sizeHint) GrowBuffer(sizeHint - availableSize);
-            return m_Span.Slice(m_Position, sizeHint);
-        }
-
-        /// <summary>
-        /// 提示需要指定长度的空间
-        /// <para>即从当前位置到 capacity 需要指定长度的空间,不足则扩充 buffer 到足够长度</para>
-        /// </summary>
-        /// <param name="sizeHint"></param>
-        public void HintSize(int sizeHint) {
-            Debug.Assert(sizeHint > 0, $"The parameter of {nameof(sizeHint)} must be greater than 0");
-
-            var availableSize = m_Span.Length - m_Position;
-            if (availableSize >= sizeHint) return;
-            GrowBuffer(sizeHint - availableSize);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose() {
-            var buffer = m_Buffer;
-            this = default;
-            if (buffer != null) ArrayPool<T>.Shared.Return(buffer);
-        }
-    }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal bool InternalEnsureCapacity(ref int capacity, int need, ref int written, int remaining, ref Span<T> span) {
+			if (capacity - written >= need) return false;
+			Advance(written);
+			written = 0;
+			HintSize(Math.Max((int)(remaining * 1.1f), remaining + need));
+			span = this.Span;
+			capacity = span.Length;
+			return true;
+		}
+	}
 }

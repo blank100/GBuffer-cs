@@ -5,7 +5,7 @@ namespace Gal.Core
 	/// <summary>
 	/// 
 	/// </summary>
-	/// <para>author gouanlin</para>
+	/// <author>gouanlin</author>
 	public static class BytesWriter
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -81,12 +81,21 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe void WriteVarUInt32(ref byte* bytes, uint value) {
-			while (value >= 0b10000000) {
-				*bytes++ = (byte)(value | 0b10000000);
-				value >>= 7;
-			}
+			//@formatter:off
+            if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)value;
+            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+            *bytes++ = (byte)(value);
+			//@formatter:on
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -94,13 +103,38 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe void WriteVarUInt64(ref byte* bytes, ulong value) {
-			while (value >= 0b10000000) {
-				*bytes++ = (byte)(value | 0b10000000);
-				value >>= 7;
-			}
+			//@formatter:off
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)value;
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+
+			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			if (value < 0x80) { *bytes++ = (byte)value; return; }
+			
+			*bytes++ = (byte)(value | 0x80); 
+			*bytes++ = (byte)(value >> 7);
+			//@formatter:on
 		}
+
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe void WriteVarInt64(ref byte* bytes, long value) => WriteVarUInt64(ref bytes, ZigZagUtils.EncodeZigZag64(value));

@@ -1,54 +1,51 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Gal.Core
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
-    /// <para>author gouanlin</para>
+    /// <author>gouanlin</author>
     public sealed class Buffer<T> : Writer<T>, IBuffer<T>
 	{
 		public Buffer(int capacity = DEFAULT_CAPACITY) : base(capacity) { }
 
-		public int readableCount {
+		public int ReadableCount {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => m_Length - m_Position;
+			get => _length - _position;
 		}
 
-		ReadOnlyMemory<T> IReader<T>.memory {
+		ReadOnlyMemory<T> IReader<T>.Memory {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => m_Buffer.AsMemory(m_Position);
+			get => Buffer.AsMemory(_position);
 		}
 
-		ReadOnlySpan<T> IReader<T>.span {
+		ReadOnlySpan<T> IReader<T>.Span {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => m_Buffer.AsSpan(m_Position);
+			get => Buffer.AsSpan(_position);
 		}
 
 		T IReader<T>.this[int index] {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => m_Buffer[index];
+			get => Buffer[index];
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public T Read() {
-			return m_Buffer[m_Position++];
-		}
+		public T Read() => Buffer[_position++];
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		ReadOnlySpan<T> IReader<T>.GetSpan(int count) {
 			Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
-			Debug.Assert(count <= m_Buffer.Length - m_Position, $"参数{nameof(count)}不能超过可读取数据的长度");
-			return m_Buffer[m_Position..(m_Position + count)];
+			Debug.Assert(count <= Buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
+			return Buffer[_position..(_position + count)];
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		ReadOnlyMemory<T> IReader<T>.GetMemory(int count) {
 			Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
-			Debug.Assert(count <= m_Buffer.Length - m_Position, $"参数{nameof(count)}不能超过可读取数据的长度");
-			return m_Buffer[m_Position..(m_Position + count)];
+			Debug.Assert(count <= Buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
+			return Buffer[_position..(_position + count)];
 		}
 	}
 }

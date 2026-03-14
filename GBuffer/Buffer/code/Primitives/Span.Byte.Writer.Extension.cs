@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Gal.Core
@@ -7,7 +6,7 @@ namespace Gal.Core
 	/// <summary>
 	/// 
 	/// </summary>
-	/// <para>author gouanlin</para>
+	/// <author>gouanlin</author>
 	public static class SpanByteWriterExtension
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -77,13 +76,7 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void WriteVarUInt32(this ref Span<byte> self, uint value) {
-			var i = 0;
-			while (value >= 0b10000000) {
-				self[i++] = (byte)(value | 0b10000000);
-				value >>= 7;
-			}
-			self[i++] = (byte)value;
-			self = self[i..];
+			self = self[SpanByteUtils.WriteVarUInt32(ref self, value)..];
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -91,13 +84,7 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void WriteVarUInt64(this ref Span<byte> self, ulong value) {
-			var i = 0;
-			while (value >= 0b10000000) {
-				self[i++] = (byte)(value | 0b10000000);
-				value >>= 7;
-			}
-			self[i++] = (byte)value;
-			self = self[i..];
+			self = self[SpanByteUtils.WriteVarUInt64(ref self, value)..];
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -13,7 +13,7 @@ namespace Serialize.Test {
 				buffer.WriteUInt8(128);
 				buffer.WriteUInt8(255);
 
-				var reader = new RefReader<byte>(buffer.writtenSpan);
+				var reader = new RefReader<byte>(buffer.WrittenSpan);
 				Assert.Equal((sbyte) '\r', reader.ReadInt8());
 				Assert.Equal(127,          reader.ReadInt8());
 				Assert.Equal(128,          reader.ReadUInt8());
@@ -25,7 +25,7 @@ namespace Serialize.Test {
 				buffer.WriteInt16(32767);
 				buffer.WriteUInt16(32768);
 
-				var reader = new RefReader<byte>(buffer.writtenSpan);
+				var reader = new RefReader<byte>(buffer.WrittenSpan);
 				Assert.Equal(32767, reader.ReadInt16());
 				Assert.Equal(32768, reader.ReadUInt16());
 			}
@@ -35,7 +35,7 @@ namespace Serialize.Test {
 				buffer.WriteInt32(int.MaxValue);
 				buffer.WriteUInt32(uint.MaxValue);
 
-				var reader = new RefReader<byte>(buffer.writtenSpan);
+				var reader = new RefReader<byte>(buffer.WrittenSpan);
 				Assert.Equal(int.MaxValue,  reader.ReadInt32());
 				Assert.Equal(uint.MaxValue, reader.ReadUInt32());
 			}
@@ -47,7 +47,7 @@ namespace Serialize.Test {
 				buffer.WriteUInt64(ulong.MaxValue);
 				buffer.WriteUInt64(ulong.MinValue);
 
-				var reader = new RefReader<byte>(buffer.writtenSpan);
+				var reader = new RefReader<byte>(buffer.WrittenSpan);
 				Assert.Equal(long.MaxValue,  reader.ReadInt64());
 				Assert.Equal(long.MinValue,  reader.ReadInt64());
 				Assert.Equal(ulong.MaxValue, reader.ReadUInt64());
@@ -62,7 +62,7 @@ namespace Serialize.Test {
 				buffer.WriteUtf8(text1);
 				buffer.WriteUtf8(text2);
 
-				var reader = new RefReader<byte>(buffer.writtenSpan);
+				var reader = new RefReader<byte>(buffer.WrittenSpan);
 				Assert.Equal(text1, reader.ReadUtf8());
 				Assert.Equal(text2, reader.ReadUtf8());
 			}

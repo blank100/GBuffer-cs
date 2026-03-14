@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 
 namespace Gal.Core
 {
@@ -7,38 +6,41 @@ namespace Gal.Core
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <para>author gouanlin</para>
+    /// <author>gouanlin</author>
     public interface IWriter<T> : IDisposable
     {
-        int capacity { get; }
-        int length { get; set; }
-        int position { get; set; }
-        int writableCount { get; }
+        int Capacity { get; }
+        int Length { get; set; }
+        int Position { get; set; }
+        int WritableCount { get; }
 
         /// <summary>
         /// 获取已写入的内容的 Span&lt;T&gt;
         /// </summary>
-        Span<T> writtenSpan { get; }
+        Span<T> WrittenSpan { get; }
 
         /// <summary>
         /// 获取已写入的内容的 Memory&lt;T&gt;
         /// </summary>
-        Memory<T> writtenMemory { get; }
+        Memory<T> WrittenMemory { get; }
 
         /// <summary>
         /// 获取当前位置到结尾的 Span&lt;T&gt;
+        /// <remarks>此属性应慎用, 在持有返回的 Span&lt;T&gt; 对象期间,如果发生了扩容等修改原始数组的操作,应重新获取 Span&lt;T&gt;</remarks>
         /// </summary>
-        Span<T> span { get; }
+        Span<T> Span { get; }
 
         /// <summary>
         /// 获取当前位置到结尾的 Memory&lt;T&gt;
+        /// <remarks>此属性应慎用, 在持有返回的 Memory&lt;T&gt; 对象期间,如果发生了扩容等修改原始数组的操作,应重新获取 Memory&lt;T&gt;</remarks>
         /// </summary>
-        Memory<T> memory { get; }
+        Memory<T> Memory { get; }
 
         /// <summary>
         /// 获取原始数组
+        /// <remarks>此属性应慎用, 在持有返回的 数组 对象期间,禁止执行会导致原始数组扩容等效果的操作</remarks>
         /// </summary>
-        T[] rawArray { get; }
+        T[] RawArray { get; }
 
         T this[int index] { set; }
 

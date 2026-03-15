@@ -10,9 +10,9 @@ using System.Runtime.InteropServices;
 
 namespace Gal.Core {
     public static class WriterByteEx {
- 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteInt8(this IWriter<byte> self, sbyte value){ 
+        public static IWriter<byte> WriteInt8(this IWriter<byte> self, sbyte value){
             self.Write((byte)value);
             return self;
         }
@@ -83,11 +83,8 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IWriter<byte> WriteVarUInt32(this IWriter<byte> self, uint value) {
-			Span<byte> buffer = stackalloc byte[5];
-			var e = SpanByteUtils.WriteVarUInt32(ref buffer, value);
-			self.HintSize(e);
-			buffer[..e].CopyTo(self.Span);
-            self.Advance(e);
+            var span = self.GetSpan(5);
+            self.Advance(SpanByteUtils.WriteVarUInt32(ref span, value));
             return self;
         }
 
@@ -96,16 +93,20 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IWriter<byte> WriteVarUInt64(this IWriter<byte> self, ulong value) {
-			Span<byte> buffer = stackalloc byte[10];
-			var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
-			self.HintSize(e);
-			buffer[..e].CopyTo(self.Span);
-			self.Advance(e);
-            return self;
+			// Span<byte> buffer = stackalloc byte[10];
+			// var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
+			// self.HintSize(e);
+			// buffer[..e].CopyTo(self.Span);
+			// self.Advance(e);
+   //          return self;
+
+           var span = self.GetSpan(10);
+           self.Advance(SpanByteUtils.WriteVarUInt64(ref span, value));
+           return self;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteVarInt64(this IWriter<byte> self, long value){ 
+        public static IWriter<byte> WriteVarInt64(this IWriter<byte> self, long value){
             self.WriteVarUInt64(ZigZagUtils.EncodeZigZag64(value));
             return self;
         }
@@ -128,16 +129,22 @@ namespace Gal.Core {
 				self.WriteInt16(0);
                 return self;
 			}
-			
-			var bytesCount   = System.Text.Encoding.UTF8.GetByteCount(value);
-			self.WriteInt16((short)bytesCount);
 
-			fixed(char* source = value){
-			    fixed (byte* target = self.GetSpan(bytesCount)) {
-				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-			    }
+			ReadOnlySpan<char> chars = value;
+            var maxLength = chars.Length * 3;
+
+            if (self.WritableCount >= maxLength + 2) {
+                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span[2..]);
+                if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
+                self.WriteUInt16((ushort)count);
+                self.Advance(count);
+            } else {
+                var count = System.Text.Encoding.UTF8.GetByteCount(chars);
+                self.WriteUInt16((ushort)count);
+                var span = self.GetSpan(count);
+                System.Text.Encoding.UTF8.GetBytes(chars, span);
+                self.Advance(count);
             }
-			self.Advance(bytesCount);
             return self;
         }
     }

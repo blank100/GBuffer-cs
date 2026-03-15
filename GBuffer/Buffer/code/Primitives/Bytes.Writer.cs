@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Gal.Core
+﻿namespace Gal.Core
 {
 	/// <summary>
 	/// 

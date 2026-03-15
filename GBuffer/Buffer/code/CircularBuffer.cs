@@ -1,10 +1,9 @@
-using System.Runtime.CompilerServices;
-
 namespace Gal.Core
 {
 	/// <summary>
 	/// 环形缓冲区
 	/// </summary>
+    /// <author>gouanlin</author>
 	public sealed class CircularBuffer<T>
 	{
 		private readonly T[] _buffer;

@@ -9,7 +9,14 @@ namespace Serialize.Benchmark {
 #if DEBUG
 			DebugRunner.Run();
 #else
-			BenchmarkRunner.Run<WriterCharBenchmark>();
+            // BenchmarkRunner.Run(typeof(Program).Assembly);
+
+            // BenchmarkRunner.Run<Int32Benchmark>();
+            // BenchmarkRunner.Run<Int16Benchmark>();
+            // BenchmarkRunner.Run<Int64Benchmark>();
+            // BenchmarkRunner.Run<DoubleBenchmark>();
+            // BenchmarkRunner.Run<VarInt32Benchmark>();
+            BenchmarkRunner.Run<VarInt64Benchmark>();
 #endif
 		}
 	}

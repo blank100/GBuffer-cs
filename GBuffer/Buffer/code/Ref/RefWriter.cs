@@ -1,6 +1,4 @@
 ﻿using System.Buffers;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Gal.Core
@@ -53,6 +51,14 @@ namespace Gal.Core
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _span.Length;
 		}
+
+        /// <summary>
+        /// 长度减去当前位置
+        /// </summary>
+        public int WritableCount {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _span.Length - _position;
+        }
 
 		/// <summary>
 		/// 长度减去当前位置

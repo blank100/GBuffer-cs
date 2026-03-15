@@ -11,4 +11,38 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="code\IWriter.Bytes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>IWriter.Bytes.cs</LastGenOutput>
+    </None>
+    <None Update="code\IReader.Bytes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>IReader.Bytes.cs</LastGenOutput>
+    </None>
+    <None Update="code\Ref\RefWriter.Bytes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RefWriter.Bytes.cs</LastGenOutput>
+    </None>
+    <None Update="code\Ref\RefReader.Bytes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RefReader.Bytes.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="code\IWriter.Bytes.cs">
+      <DependentUpon>IWriter.Bytes.tt</DependentUpon>
+    </Compile>
+    <Compile Update="code\IReader.Bytes.cs">
+      <DependentUpon>IReader.Bytes.tt</DependentUpon>
+    </Compile>
+    <Compile Update="code\Ref\RefWriter.Bytes.cs">
+      <DependentUpon>RefWriter.Bytes.tt</DependentUpon>
+    </Compile>
+    <Compile Update="code\Ref\RefReader.Bytes.cs">
+      <DependentUpon>RefReader.Bytes.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

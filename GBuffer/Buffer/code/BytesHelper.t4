@@ -39,7 +39,7 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteInt8) #>(this <#= className #> self, sbyte value){ 
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteInt8) #>(this <#= className #> self, sbyte value){
             self.Write((byte)value);
 <#
         if (returnSelf) {
@@ -277,9 +277,10 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint <#= nameof(ReadVarUInt32) #>(this <#= className #> self) {
-            var t = SpanByteUtils.ReadVarUInt32(self.Span, out var c);
-			self.Advance(c);
-			return t;
+            var span = self.Span;
+            var t = span.Length >= 5 ? SpanByteUtils.ReadVarUInt32(span, out var count) : SpanByteUtils.ReadVarUInt32Slow(span, out count);
+            self.Advance(count);
+            return t;
         }
 <#
     }
@@ -299,11 +300,8 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarUInt32) #>(this <#= className #> self, uint value) {
-			Span<byte> buffer = stackalloc byte[5];
-			var e = SpanByteUtils.WriteVarUInt32(ref buffer, value);
-			self.HintSize(e);
-			buffer[..e].CopyTo(self.Span);
-            self.Advance(e);
+            var span = self.GetSpan(5);
+            self.Advance(SpanByteUtils.WriteVarUInt32(ref span, value));
 <#
         if (returnSelf) {
 #>
@@ -373,7 +371,7 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt64) #>(this <#= className #> self, long value){ 
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt64) #>(this <#= className #> self, long value){
             self.<#= nameof(WriteVarUInt64) #>(ZigZagUtils.EncodeZigZag64(value));
 <#
         if (returnSelf) {
@@ -449,16 +447,22 @@
 				self.WriteInt16(0);
                 return <#= returnSelf ? "self" : "" #>;
 			}
-			
-			var bytesCount   = System.Text.Encoding.UTF8.GetByteCount(value);
-			self.WriteInt16((short)bytesCount);
 
-			fixed(char* source = value){
-			    fixed (byte* target = self.GetSpan(bytesCount)) {
-				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-			    }
+			ReadOnlySpan<char> chars = value;
+            var maxLength = chars.Length * 3;
+
+            if (self.WritableCount >= maxLength + 2) {
+                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span[2..]);
+                if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
+                self.WriteUInt16((ushort)count);
+                self.Advance(count);
+            } else {
+                var count = System.Text.Encoding.UTF8.GetByteCount(chars);
+                self.WriteUInt16((ushort)count);
+                var span = self.GetSpan(count);
+                System.Text.Encoding.UTF8.GetBytes(chars, span);
+                self.Advance(count);
             }
-			self.Advance(bytesCount);
 <#
         if (returnSelf) {
 #>

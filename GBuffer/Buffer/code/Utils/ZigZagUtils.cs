@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Gal.Core
+﻿namespace Gal.Core
 {
 	/// <summary>
 	/// ZigTag算法,将有符号的整数编码为无符号整数,便于使用 Varint 编码进行压缩

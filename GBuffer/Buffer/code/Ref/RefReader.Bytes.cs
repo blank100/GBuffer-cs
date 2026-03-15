@@ -96,9 +96,10 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadVarUInt32(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadVarUInt32(self.Span, out var c);
-			self.Advance(c);
-			return t;
+            var span = self.Span;
+            var t = span.Length >= 5 ? SpanByteUtils.ReadVarUInt32(span, out var count) : SpanByteUtils.ReadVarUInt32Slow(span, out count);
+            self.Advance(count);
+            return t;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

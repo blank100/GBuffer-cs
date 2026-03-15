@@ -1,12 +1,9 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Gal.Core
-{
-	public static class SpanByteUtils
-	{
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static int WriteVarUInt32(ref Span<byte> self, uint value) {
+namespace Gal.Core {
+    public static class SpanByteUtils {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteVarUInt32(ref Span<byte> self, uint value) {
             //@formatter:off
             ref var b = ref MemoryMarshal.GetReference(self);
 
@@ -20,16 +17,16 @@ namespace Gal.Core
 
             Unsafe.Add(ref b, 2) = (byte)((value & 0x7F) | 0x80); value >>= 7;
             if (value < 0x80) { Unsafe.Add(ref b, 3) = (byte)value;  return 4; }
-            
+
             Unsafe.Add(ref b, 3) = (byte)((value & 0x7F) | 0x80);value >>= 7;
             Unsafe.Add(ref b, 4) = (byte)value;
-            
-            return 5;
-			//@formatter:on
-		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static uint ReadVarUInt32(ReadOnlySpan<byte> span, out int readCount) {
+            return 5;
+            //@formatter:on
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ReadVarUInt32(ReadOnlySpan<byte> span, out int readCount) {
 			//@formatter:off
 			ref var b = ref MemoryMarshal.GetReference(span);
 
@@ -50,13 +47,37 @@ namespace Gal.Core
 
 			var byte4 = Unsafe.Add(ref b, 4);
 			result |= (uint)(byte4 & 0x0F) << 28;
-			
-			readCount = 5; return result;
-			//@formatter:on
-		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static int WriteVarUInt64(ref Span<byte> self, ulong value) {
+			readCount = 5; return result;
+            //@formatter:on
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ReadVarUInt32Slow(ReadOnlySpan<byte> span, out int readCount) {
+            uint result = 0;
+            var shift = 0;
+
+            var count = Math.Min(span.Length, 5);
+
+            for (var i = 0; i < count; i++) {
+                var b = span[i];
+
+                result |= (uint)(b & 0x7F) << shift;
+                if ((b & 0x80) == 0) {
+                    if (i == 4 && (b & 0xF0) != 0) throw new FormatException("Invalid VarUInt32");
+
+                    readCount = i + 1;
+                    return result;
+                }
+
+                shift += 7;
+            }
+
+            throw new FormatException("Invalid VarUInt32");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteVarUInt64(ref Span<byte> self, ulong value) {
             //@formatter:off
             ref var b = ref MemoryMarshal.GetReference(self);
 
@@ -85,16 +106,16 @@ namespace Gal.Core
 
             Unsafe.Add(ref b, 7) = (byte)((value & 0x7F) | 0x80); value >>= 7;
             if (value < 0x80) { Unsafe.Add(ref b, 8) = (byte)value; return 9; }
-            
+
             Unsafe.Add(ref b, 8) = (byte)((value & 0x7F) | 0x80);
             Unsafe.Add(ref b, 9) = (byte)(value >> 7);
-            
+
             return 10;
-			//@formatter:on
-		}
-		
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static ulong ReadVarUInt64(ReadOnlySpan<byte> span, out int readCount) {
+            //@formatter:on
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ReadVarUInt64(ReadOnlySpan<byte> span, out int readCount) {
 			//@formatter:off
 			ref var b = ref MemoryMarshal.GetReference(span);
 
@@ -134,10 +155,10 @@ namespace Gal.Core
 			if ((byte8 & 0x80) == 0) { readCount = 9; return result; }
 
 			var byte9 = Unsafe.Add(ref b, 9);
-			result |= (ulong)byte9 << 63; 
-			
+			result |= (ulong)byte9 << 63;
+
 			readCount = 10; return result;
-			//@formatter:on
-		}
-	}
+            //@formatter:on
+        }
+    }
 }

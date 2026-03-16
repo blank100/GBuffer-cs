@@ -3,7 +3,7 @@
 namespace Gal.Core
 {
 	/// <summary>
-	/// 
+	///
 	/// </summary>
 	/// <author>gouanlin</author>
 	public static class ReadonlySpanByteReaderExtension
@@ -121,16 +121,16 @@ namespace Gal.Core
 		public static long ReadVarInt64(this ref ReadOnlySpan<byte> self) => ZigZagUtils.DecodeZigZag64(self.ReadVarUInt64());
 
 		public static unsafe string ReadUtf8(this ref ReadOnlySpan<byte> self, int len) {
-			Debug.Assert(len <= self.Length, "read data overflow");
-			fixed (byte* bytes = self) {
-				var t = bytes;
-				var result = BytesReader.ReadUtf8(ref t, len);
-				self = self[(int)(t - bytes)..];
-				return result;
-			}
+            if (len == 0) return string.Empty;
+            if (len > self.Length) throw new("error in ReadUtf8 => read data overflow");
+
+            var span = self[..len];
+            var t = System.Text.Encoding.UTF8.GetString(span);
+            self  = self[len..];
+            return t;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static string ReadUtf8(this ref ReadOnlySpan<byte> self) => self.ReadUtf8(self.ReadInt16());
+		public static string ReadUtf8(this ref ReadOnlySpan<byte> self) => self.ReadUtf8(self.ReadUInt16());
 	}
 }

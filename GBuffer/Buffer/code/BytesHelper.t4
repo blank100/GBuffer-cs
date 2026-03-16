@@ -407,44 +407,8 @@
     }
 #>
 <#
-    void ReadUtf8ToEnd(string className) {
-#>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string <#= nameof(ReadUtf8ToEnd) #>(this <#= className #> self) {
-			var len = self.ReadableCount;
-            if (len == 0) return string.Empty;
-
-            var span = self.Span;
-            var t = System.Text.Encoding.UTF8.GetString(span);
-            self.Advance(len);
-            return t;
-        }
-<#
-    }
-#>
-<#
     void WriteUtf8(string className, bool returnSelf) {
 #>
-
-        public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value, int bytesCount) {
-			if (string.IsNullOrEmpty(value)) {
-                return <#= returnSelf ? "self" : "" #>;
-			}
-			fixed(char* source = value){
-			    fixed (byte* target = self.GetSpan(bytesCount)) {
-				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-			    }
-            }
-			self.Advance(bytesCount);
-<#
-        if (returnSelf) {
-#>
-            return self;
-<#
-        }
-#>
-        }
 
         public static unsafe <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value) {
 			if (string.IsNullOrEmpty(value)) {

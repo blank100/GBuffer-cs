@@ -107,19 +107,6 @@ namespace Gal.Core {
             return self;
         }
 
-        public static unsafe IWriter<byte> WriteUtf8(this IWriter<byte> self, string value, int bytesCount) {
-			if (string.IsNullOrEmpty(value)) {
-                return self;
-			}
-			fixed(char* source = value){
-			    fixed (byte* target = self.GetSpan(bytesCount)) {
-				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-			    }
-            }
-			self.Advance(bytesCount);
-            return self;
-        }
-
         public static unsafe IWriter<byte> WriteUtf8(this IWriter<byte> self, string value) {
 			if (string.IsNullOrEmpty(value)) {
 				self.WriteInt16(0);

@@ -130,16 +130,5 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ReadUtf8(this IReader<byte> self) => self.ReadUtf8(self.ReadUInt16());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ReadUtf8ToEnd(this IReader<byte> self) {
-			var len = self.ReadableCount;
-            if (len == 0) return string.Empty;
-
-            var span = self.Span;
-            var t = System.Text.Encoding.UTF8.GetString(span);
-            self.Advance(len);
-            return t;
-        }
     }
 }

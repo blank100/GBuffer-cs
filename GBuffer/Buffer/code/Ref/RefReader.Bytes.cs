@@ -108,7 +108,7 @@ namespace Gal.Core {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ReadVarUInt64(this ref RefReader<byte> self) {
             var span = self.Span;
-            var t = span.Length >= 10 ? SpanByteUtils.ReadVarUInt64(span, out var count) : SpanByteUtils.ReadVarUInt64Slow(span,out count);
+            var t = span.Length >= 10 ? SpanByteUtils.ReadVarUInt64(span, out var count) : SpanByteUtils.ReadVarUInt64Slow(span, out count);
 			self.Advance(count);
 			return t;
         }
@@ -119,9 +119,11 @@ namespace Gal.Core {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ReadUtf8(this ref RefReader<byte> self, int len) {
             if (len == 0) return string.Empty;
-            if (len > self.ReadableCount) throw new("error in ReadUtf8 => read data overflow");
+            var span = self.Span;
+            if (len > span.Length) throw new("error in ReadUtf8 => read data overflow");
 
-            var t = System.Text.Encoding.UTF8.GetString(self.GetSpan(len));
+            span = span[..len];
+            var t = System.Text.Encoding.UTF8.GetString(span);
             self.Advance(len);
             return t;
         }

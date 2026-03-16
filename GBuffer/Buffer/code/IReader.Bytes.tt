@@ -37,7 +37,6 @@ namespace Gal.Core {
 	ReadVarUInt64(className);
 	ReadVarInt64(className);
 	ReadUtf8(className);
-	ReadUtf8ToEnd(className);
 #>
     }
 }

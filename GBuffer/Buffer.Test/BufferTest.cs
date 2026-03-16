@@ -3,7 +3,7 @@ using Gal.Core;
 using Xunit;
 
 namespace Serialize.Test {
-	public class ByteArrayTest {
+	public class BufferTest {
 		[Fact]
 		public void WriteReadTest() {
 			using var buffer = new Buffer<byte>(1024);
@@ -248,7 +248,7 @@ namespace Serialize.Test {
 					}
 				}
 			}
-			
+
 			//grow测试
 			{
 				buffer.Length = 0;
@@ -261,7 +261,7 @@ namespace Serialize.Test {
 				}
 				Assert.Equal(2048, buffer.Capacity);
 			}
-			
+
 			//varuint32测试
 			{
 				var pcg = Random.Shared;

@@ -90,18 +90,6 @@ namespace Gal.Core {
             self.WriteVarUInt64(ZigZagUtils.EncodeZigZag64(value));
         }
 
-        public static unsafe void WriteUtf8(this ref RefWriter<byte> self, string value, int bytesCount) {
-			if (string.IsNullOrEmpty(value)) {
-                return ;
-			}
-			fixed(char* source = value){
-			    fixed (byte* target = self.GetSpan(bytesCount)) {
-				    System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-			    }
-            }
-			self.Advance(bytesCount);
-        }
-
         public static unsafe void WriteUtf8(this ref RefWriter<byte> self, string value) {
 			if (string.IsNullOrEmpty(value)) {
 				self.WriteInt16(0);

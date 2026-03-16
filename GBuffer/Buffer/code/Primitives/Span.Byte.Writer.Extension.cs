@@ -3,7 +3,7 @@
 namespace Gal.Core
 {
 	/// <summary>
-	/// 
+	///
 	/// </summary>
 	/// <author>gouanlin</author>
 	public static class SpanByteWriterExtension
@@ -99,20 +99,31 @@ namespace Gal.Core
 			self.WriteInt64(*(long*)&value);
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static unsafe void WriteUtf8(this ref Span<byte> self, string value) {
-			if (string.IsNullOrEmpty(value)) {
-				self.WriteInt16(0);
-				return;
-			}
-			var bytesCount = System.Text.Encoding.UTF8.GetByteCount(value!);
-			self.WriteInt16((short)bytesCount);
-			fixed (char* source = value) {
-				fixed (byte* target = self) {
-					System.Text.Encoding.UTF8.GetBytes(source, value.Length, target, bytesCount);
-				}
-			}
-			self = self[bytesCount..];
-		}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteUtf8(this ref Span<byte> self, string value)
+        {
+            if (string.IsNullOrEmpty(value)) {
+                self.WriteInt16(0);
+                return;
+            }
+
+            ReadOnlySpan<char> chars = value;
+            int maxLength = chars.Length * 3;
+
+            if (self.Length >= maxLength + 2) {
+                int count = System.Text.Encoding.UTF8.GetBytes(chars, self[2..]);
+                if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
+                self.WriteInt16((short)count);
+                self = self[count..];
+            } else {
+                int count = System.Text.Encoding.UTF8.GetByteCount(chars);
+                if (count + 2 > self.Length) throw new ArgumentOutOfRangeException(nameof(value));
+
+                self.WriteInt16((short)count);
+                System.Text.Encoding.UTF8.GetBytes(chars, self);
+
+                self = self[count..];
+            }
+        }
 	}
 }

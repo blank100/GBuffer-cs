@@ -107,8 +107,9 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ReadVarUInt64(this IReader<byte> self) {
-            var t = SpanByteUtils.ReadVarUInt64(self.Span, out var c);
-			self.Advance(c);
+            var span = self.Span;
+            var t = span.Length >= 10 ? SpanByteUtils.ReadVarUInt64(span, out var count) : SpanByteUtils.ReadVarUInt64Slow(span,out count);
+			self.Advance(count);
 			return t;
         }
 

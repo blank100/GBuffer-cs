@@ -160,5 +160,36 @@ namespace Gal.Core {
 			readCount = 10; return result;
             //@formatter:on
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ReadVarUInt64Slow(ReadOnlySpan<byte> span, out int readCount) {
+            ulong result = 0;
+            var shift = 0;
+
+            // UInt64 最多占用 10 个字节
+            var count = Math.Min(span.Length, 10);
+
+            for (var i = 0; i < count; i++) {
+                var b = span[i];
+
+                // 使用 0x7F 掩码获取当前 7 位数据，并转为 ulong 避免位移溢出
+                result |= (ulong)(b & 0x7F) << shift;
+
+                // 如果最高位为 0，说明是最后一个字节
+                if ((b & 0x80) == 0) {
+                    // 边界检查：第 10 个字节只能提供第 64 位数据
+                    // 因此第 10 个字节的值（b）除了最低位外，其余位必须为 0
+                    if (i == 9 && (b & 0xFE) != 0) throw new FormatException("Invalid VarUInt64: Overflows 64-bit range.");
+
+                    readCount = i + 1;
+                    return result;
+                }
+
+                shift += 7;
+            }
+
+            throw new FormatException("Invalid VarUInt64: Sequence too long or buffer exhausted.");
+        }
+
     }
 }

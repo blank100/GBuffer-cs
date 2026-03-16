@@ -191,5 +191,11 @@ namespace Gal.Core {
             throw new FormatException("Invalid VarUInt64: Sequence too long or buffer exhausted.");
         }
 
+        // 辅助方法：快速判断是否为纯 ASCII
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAscii(ReadOnlySpan<byte> span) {
+            foreach (var b in span) if (b > 127) return false;
+            return true;
+        }
     }
 }

@@ -16,7 +16,8 @@ namespace Serialize.Benchmark {
             // BenchmarkRunner.Run<Int64Benchmark>();
             // BenchmarkRunner.Run<DoubleBenchmark>();
             // BenchmarkRunner.Run<VarInt32Benchmark>();
-            BenchmarkRunner.Run<VarInt64Benchmark>();
+            // BenchmarkRunner.Run<VarInt64Benchmark>();
+            BenchmarkRunner.Run<UTF8Benchmark>();
 #endif
 		}
 	}

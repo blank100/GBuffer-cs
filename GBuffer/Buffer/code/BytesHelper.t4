@@ -392,9 +392,11 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string <#= nameof(ReadUtf8) #>(this <#= className #> self, int len) {
             if (len == 0) return string.Empty;
-            if (len > self.ReadableCount) throw new("error in ReadUtf8 => read data overflow");
+            var span = self.Span;
+            if (len > span.Length) throw new("error in ReadUtf8 => read data overflow");
 
-            var t = System.Text.Encoding.UTF8.GetString(self.GetSpan(len));
+            span = span[..len];
+            var t = System.Text.Encoding.UTF8.GetString(span);
             self.Advance(len);
             return t;
         }
@@ -413,7 +415,8 @@
 			var len = self.ReadableCount;
             if (len == 0) return string.Empty;
 
-            var t = System.Text.Encoding.UTF8.GetString(self.GetSpan(len));
+            var span = self.Span;
+            var t = System.Text.Encoding.UTF8.GetString(span);
             self.Advance(len);
             return t;
         }

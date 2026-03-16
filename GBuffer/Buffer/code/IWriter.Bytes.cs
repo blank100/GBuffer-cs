@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 
 namespace Gal.Core {
     public static class WriterByteEx {
-
+ 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IWriter<byte> WriteInt8(this IWriter<byte> self, sbyte value){
             self.Write((byte)value);
@@ -93,16 +93,12 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IWriter<byte> WriteVarUInt64(this IWriter<byte> self, ulong value) {
-			// Span<byte> buffer = stackalloc byte[10];
-			// var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
-			// self.HintSize(e);
-			// buffer[..e].CopyTo(self.Span);
-			// self.Advance(e);
-   //          return self;
-
-           var span = self.GetSpan(10);
-           self.Advance(SpanByteUtils.WriteVarUInt64(ref span, value));
-           return self;
+			Span<byte> buffer = stackalloc byte[10];
+			var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
+			self.HintSize(e);
+			buffer[..e].CopyTo(self.Span);
+			self.Advance(e);
+            return self;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

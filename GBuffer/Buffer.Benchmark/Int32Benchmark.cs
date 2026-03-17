@@ -16,6 +16,9 @@ public class Int32Benchmark {
 
     private Buffer<byte> _buffer;
 
+    private byte[] _SpanRead;
+    private byte[] _SpanWrite;
+
     private const int Value = 123456;
     private const int MaxN = 4096;
 
@@ -24,7 +27,7 @@ public class Int32Benchmark {
     [Params(1, 16, 128, 1024)] public int N;
 
     [GlobalSetup]
-    public void Setup() {
+    public unsafe void Setup() {
         int size = 1024 * 1024;
 
         _stream = new MemoryStream(size);
@@ -34,6 +37,9 @@ public class Int32Benchmark {
         _byteArray = new ByteArray(size);
 
         _buffer = new Buffer<byte>(size);
+
+        _SpanRead = new byte[size];
+        _SpanWrite = new byte[size];
 
         _readOffset = 4096;
 
@@ -46,6 +52,13 @@ public class Int32Benchmark {
             _writer.Write(Value);
             _byteArray.WriteInt32(Value);
             _buffer.WriteInt32(Value);
+        }
+
+        fixed (byte* ptr = _SpanRead) {
+            var bytes = ptr;
+            for (int i = 0; i < MaxN; i++) {
+                BytesWriter.WriteInt32(ref bytes, Value);
+            }
         }
 
         _writer.Flush();
@@ -88,6 +101,19 @@ public class Int32Benchmark {
         return _buffer.Position;
     }
 
+    [Benchmark]
+    [BenchmarkCategory("Write")]
+    public unsafe long Span_WriteInt32() {
+        fixed (byte* ptr = _SpanWrite) {
+            var bytes = ptr;
+            for (int i = 0; i < N; i++) {
+                BytesWriter.WriteInt32(ref bytes, Value);
+            }
+
+            return bytes - ptr;
+        }
+    }
+
     // ------------------
     // Read
     // ------------------
@@ -99,8 +125,7 @@ public class Int32Benchmark {
 
         int result = 0;
 
-        for (int i = 0; i < N; i++)
-            result ^= _reader.ReadInt32();
+        for (int i = 0; i < N; i++) result ^= _reader.ReadInt32();
 
         return result;
     }
@@ -127,6 +152,21 @@ public class Int32Benchmark {
 
         for (int i = 0; i < N; i++)
             result ^= _buffer.ReadInt32();
+
+        return result;
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("Read")]
+    public unsafe int Span_ReadInt32() {
+        int result = 0;
+
+        fixed (byte* ptr = _SpanRead) {
+            var bytes = ptr;
+            for (int i = 0; i < N; i++) {
+                result ^= BytesReader.ReadInt32(ref bytes);
+            }
+        }
 
         return result;
     }

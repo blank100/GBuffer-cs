@@ -108,15 +108,15 @@ namespace Gal.Core
             }
 
             ReadOnlySpan<char> chars = value;
-            int maxLength = chars.Length * 3;
+            var maxLength = chars.Length * 3;
 
             if (self.Length >= maxLength + 2) {
-                int count = System.Text.Encoding.UTF8.GetBytes(chars, self[2..]);
+                var count = System.Text.Encoding.UTF8.GetBytes(chars, self[2..]);
                 if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
                 self.WriteInt16((short)count);
                 self = self[count..];
             } else {
-                int count = System.Text.Encoding.UTF8.GetByteCount(chars);
+                var count = System.Text.Encoding.UTF8.GetByteCount(chars);
                 if (count + 2 > self.Length) throw new ArgumentOutOfRangeException(nameof(value));
 
                 self.WriteInt16((short)count);

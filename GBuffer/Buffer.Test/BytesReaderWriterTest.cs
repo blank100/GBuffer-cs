@@ -18,8 +18,8 @@ namespace Serialize.Test {
 						BytesWriter.WriteUInt16(ref ptr1, n1);
 						BytesWriter.WriteInt16(ref ptr1, n2);
 
-						Assert.Equal(n1, BytesReader.ReadUInt16(ref ptr2));
-						Assert.Equal(n2, BytesReader.ReadInt16(ref ptr2));
+						Assert.Equal(n1, BytesReader.Read<ushort>(ref ptr2));
+						Assert.Equal(n2, BytesReader.Read<short>(ref ptr2));
 					}
 				}
 			}
@@ -37,10 +37,10 @@ namespace Serialize.Test {
 				BytesWriter.WriteUInt8(ref ptr1, 128);
 				BytesWriter.WriteUInt8(ref ptr1, 255);
 
-				Assert.Equal((sbyte) '\r', BytesReader.ReadInt8(ref ptr2));
-				Assert.Equal(127,          BytesReader.ReadInt8(ref ptr2));
-				Assert.Equal(128,          BytesReader.ReadUInt8(ref ptr2));
-				Assert.Equal(255,          BytesReader.ReadUInt8(ref ptr2));
+				Assert.Equal((sbyte) '\r', BytesReader.Read<sbyte>(ref ptr2));
+				Assert.Equal(127,          BytesReader.Read<sbyte>(ref ptr2));
+				Assert.Equal(128,          BytesReader.Read<byte>(ref ptr2));
+				Assert.Equal(255,          BytesReader.Read<byte>(ref ptr2));
 			}
 		}
 
@@ -56,10 +56,10 @@ namespace Serialize.Test {
 				BytesWriter.WriteInt16(ref ptr1, short.MinValue);
 				BytesWriter.WriteInt16(ref ptr1, -100);
 
-				Assert.Equal(32767,          BytesReader.ReadInt16(ref ptr2));
-				Assert.Equal(32768,          BytesReader.ReadUInt16(ref ptr2));
-				Assert.Equal(short.MinValue, BytesReader.ReadInt16(ref ptr2));
-				Assert.Equal(-100,           BytesReader.ReadInt16(ref ptr2));
+				Assert.Equal(32767,          BytesReader.Read<short>(ref ptr2));
+				Assert.Equal(32768,          BytesReader.Read<ushort>(ref ptr2));
+				Assert.Equal(short.MinValue, BytesReader.Read<short>(ref ptr2));
+				Assert.Equal(-100,           BytesReader.Read<short>(ref ptr2));
 			}
 		}
 
@@ -75,10 +75,10 @@ namespace Serialize.Test {
 				BytesWriter.WriteUInt32(ref ptr1, uint.MinValue);
 				BytesWriter.WriteUInt32(ref ptr1, uint.MaxValue);
 
-				Assert.Equal(int.MinValue,  BytesReader.ReadInt32(ref ptr2));
-				Assert.Equal(int.MaxValue,  BytesReader.ReadInt32(ref ptr2));
-				Assert.Equal(uint.MinValue, BytesReader.ReadUInt32(ref ptr2));
-				Assert.Equal(uint.MaxValue, BytesReader.ReadUInt32(ref ptr2));
+				Assert.Equal(int.MinValue,  BytesReader.Read<int>(ref ptr2));
+				Assert.Equal(int.MaxValue,  BytesReader.Read<int>(ref ptr2));
+				Assert.Equal(uint.MinValue, BytesReader.Read<uint>(ref ptr2));
+				Assert.Equal(uint.MaxValue, BytesReader.Read<uint>(ref ptr2));
 			}
 		}
 
@@ -94,10 +94,10 @@ namespace Serialize.Test {
 				BytesWriter.WriteUInt64(ref ptr1, ulong.MinValue);
 				BytesWriter.WriteUInt64(ref ptr1, ulong.MaxValue);
 
-				Assert.Equal(long.MinValue,  BytesReader.ReadInt64(ref ptr2));
-				Assert.Equal(long.MaxValue,  BytesReader.ReadInt64(ref ptr2));
-				Assert.Equal(ulong.MinValue, BytesReader.ReadUInt64(ref ptr2));
-				Assert.Equal(ulong.MaxValue, BytesReader.ReadUInt64(ref ptr2));
+				Assert.Equal(long.MinValue,  BytesReader.Read<long>(ref ptr2));
+				Assert.Equal(long.MaxValue,  BytesReader.Read<long>(ref ptr2));
+				Assert.Equal(ulong.MinValue, BytesReader.Read<ulong>(ref ptr2));
+				Assert.Equal(ulong.MaxValue, BytesReader.Read<ulong>(ref ptr2));
 			}
 		}
 
@@ -185,10 +185,10 @@ namespace Serialize.Test {
 				BytesWriter.WriteDouble(ref ptr1, double.MaxValue);
 				BytesWriter.WriteUtf8(ref ptr1, "this is text");
 
-				Assert.Equal(sbyte.MaxValue,  BytesReader.ReadInt8(ref ptr2));
-				Assert.Equal(short.MaxValue,  BytesReader.ReadInt16(ref ptr2));
-				Assert.Equal(int.MaxValue,    BytesReader.ReadInt32(ref ptr2));
-				Assert.Equal(long.MaxValue,   BytesReader.ReadInt64(ref ptr2));
+				Assert.Equal(sbyte.MaxValue,  BytesReader.Read<sbyte>(ref ptr2));
+				Assert.Equal(short.MaxValue,  BytesReader.Read<short>(ref ptr2));
+				Assert.Equal(int.MaxValue,    BytesReader.Read<int>(ref ptr2));
+				Assert.Equal(long.MaxValue,   BytesReader.Read<long>(ref ptr2));
 				Assert.Equal(float.MaxValue,  BytesReader.ReadFloat(ref ptr2));
 				Assert.Equal(double.MaxValue, BytesReader.ReadDouble(ref ptr2));
 				Assert.Equal("this is text",  BytesReader.ReadUtf8(ref ptr2));

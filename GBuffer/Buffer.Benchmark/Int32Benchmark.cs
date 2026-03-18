@@ -103,7 +103,7 @@ public class Int32Benchmark {
 
     [Benchmark]
     [BenchmarkCategory("Write")]
-    public unsafe long Span_WriteInt32() {
+    public unsafe long Bytes_WriteInt32() {
         fixed (byte* ptr = _SpanWrite) {
             var bytes = ptr;
             for (int i = 0; i < N; i++) {
@@ -158,13 +158,13 @@ public class Int32Benchmark {
 
     [Benchmark]
     [BenchmarkCategory("Read")]
-    public unsafe int Span_ReadInt32() {
+    public unsafe int Bytes_ReadInt32() {
         int result = 0;
 
         fixed (byte* ptr = _SpanRead) {
             var bytes = ptr;
             for (int i = 0; i < N; i++) {
-                result ^= BytesReader.ReadInt32(ref bytes);
+                result ^= BytesReader.Read<int>(ref bytes);
             }
         }
 

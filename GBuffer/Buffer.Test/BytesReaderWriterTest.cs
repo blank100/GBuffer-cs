@@ -15,7 +15,7 @@ namespace Serialize.Test {
 
 						var n1 = (ushort) Random.Shared.Next(short.MinValue, short.MaxValue);
 						var n2 = (short) Random.Shared.Next(short.MinValue,  short.MaxValue);
-						BytesWriter.WriteInt16(ref ptr1, n1);
+						BytesWriter.WriteUInt16(ref ptr1, n1);
 						BytesWriter.WriteInt16(ref ptr1, n2);
 
 						Assert.Equal(n1, BytesReader.ReadUInt16(ref ptr2));
@@ -52,7 +52,7 @@ namespace Serialize.Test {
 				var ptr2 = bytePtr;
 
 				BytesWriter.WriteInt16(ref ptr1, 32767);
-				BytesWriter.WriteInt16(ref ptr1, 32768);
+				BytesWriter.WriteUInt16(ref ptr1, 32768);
 				BytesWriter.WriteInt16(ref ptr1, short.MinValue);
 				BytesWriter.WriteInt16(ref ptr1, -100);
 
@@ -123,7 +123,7 @@ namespace Serialize.Test {
 				Assert.Equal(float.PositiveInfinity, BytesReader.ReadFloat(ref ptr2));
 			}
 		}
-		
+
 		[Fact]
 		private unsafe void DoubleTest() {
 			var bytes = new byte[48];

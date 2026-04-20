@@ -14,9 +14,6 @@ public class VarInt32Benchmark {
     private Buffer<byte> _bufferRead;
     private Buffer<byte> _bufferWrite;
 
-    private byte[] _SpanRead;
-    private byte[] _SpanWrite;
-
     private readonly int[] _testValues = { 0, 1, 128, 32768, 80388608, -1, -127, -32767, -80388607 };
 
     private const int ITERATIONS = 100_000_00;
@@ -32,17 +29,11 @@ public class VarInt32Benchmark {
         _bufferRead = new Buffer<byte>(size);
         _bufferWrite = new Buffer<byte>(size);
 
-        _SpanRead = new byte[size];
-        _SpanWrite = new byte[size];
-
-        Span<byte> spanReadWriter = _SpanRead;
-
         // 只为读取基准准备缓冲区
         for (var i = 0; i < ITERATIONS; i++) {
             foreach (var value in _testValues) {
                 _byteArrayRead.WriteULEB128(value);
                 _bufferRead.WriteVarInt32(value);
-                spanReadWriter.WriteVarInt32(value);
             }
         }
     }
@@ -81,19 +72,6 @@ public class VarInt32Benchmark {
         return _bufferWrite.Position;
     }
 
-    [Benchmark]
-    [BenchmarkCategory("Write")]
-    public long Span_WriteVarInt32() {
-        Span<byte> writer = _SpanWrite;
-
-        var values = _testValues;
-        for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in values) writer.WriteVarInt32(v);
-        }
-
-        return writer.Length;
-    }
-
     // ------------------
     // Read 基准
     // ------------------
@@ -122,21 +100,6 @@ public class VarInt32Benchmark {
         for (var i = 0; i < ITERATIONS; i++) {
             foreach (var v in _testValues) {
                 result ^= _bufferRead.ReadVarInt32();
-            }
-        }
-
-        return result;
-    }
-
-    [Benchmark]
-    [BenchmarkCategory("Read")]
-    public int Span_ReadVarInt32() {
-        ReadOnlySpan<byte> reader = _SpanRead;
-        var result = 0;
-
-        for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in _testValues) {
-                result ^= reader.ReadVarInt32();
             }
         }
 

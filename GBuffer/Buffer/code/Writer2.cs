@@ -2,16 +2,11 @@
 using System.Runtime.InteropServices;
 
 namespace Gal.Core {
-    /// <summary>
-    /// Writer2
-    /// </summary>
-    /// <author>gouanlin</author>
-    /// <typeparam name="T"></typeparam>
-    public class Writer2<T> : IWriter2<Writer2<T>, T>, IBufferWriter<T> {
+    public class Writer2<TSelf, TData> : IWriter2<TSelf, TData>, IBufferWriter<TData> where TSelf : Writer2<TSelf, TData> {
         //默认容量
         public const int DEFAULT_CAPACITY = 256;
 
-        protected T[] Buffer;
+        protected TData[] Buffer;
         protected int _position;
         protected int _length;
 
@@ -60,27 +55,27 @@ namespace Gal.Core {
             get => Buffer.Length - _position;
         }
 
-        public Memory<T> WrittenMemory {
+        public Memory<TData> WrittenMemory {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Buffer.AsMemory(0, _length);
         }
 
-        public Memory<T> Memory {
+        public Memory<TData> Memory {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Buffer.AsMemory(_position);
         }
 
-        public Span<T> WrittenSpan {
+        public Span<TData> WrittenSpan {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Buffer.AsSpan(0, _length);
         }
 
-        public Span<T> Span {
+        public Span<TData> Span {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Buffer.AsSpan(_position);
         }
 
-        public T[] RawArray {
+        public TData[] RawArray {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Buffer;
         }
@@ -88,12 +83,12 @@ namespace Gal.Core {
         public Writer2(int capacity = DEFAULT_CAPACITY) {
             Debug.Assert(capacity >= 0, $"The parameter {nameof(capacity)} cannot be negative");
 
-            Buffer = ArrayPool<T>.Shared.Rent(capacity);
+            Buffer = ArrayPool<TData>.Shared.Rent(capacity);
             _position = 0;
             _length = 0;
         }
 
-        public T this[int index] {
+        public TData this[int index] {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Buffer[index] = value;
         }
@@ -103,18 +98,18 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="element"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element) {
+        public TSelf Write(TData element) {
             var p = _position;
             var n = p + 1;
 
             if (n > Buffer.Length) GrowBuffer(1);
 
-            Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p) = element;
+            Unsafe.Add(ref MemoryMarshal.GetReference<TData>(Buffer), p) = element;
 
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -123,11 +118,11 @@ namespace Gal.Core {
         /// <param name="element1"></param>
         /// <param name="element2"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element1, T element2) {
+        public TSelf Write(TData element1, TData element2) {
             var p = _position;
             HintSize(2);
 
-            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p);
+            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<TData>(Buffer), p);
             Unsafe.Add(ref b, 0) = element1;
             Unsafe.Add(ref b, 1) = element2;
 
@@ -135,7 +130,7 @@ namespace Gal.Core {
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -145,11 +140,11 @@ namespace Gal.Core {
         /// <param name="element2"></param>
         /// <param name="element3"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element1, T element2, T element3) {
+        public TSelf Write(TData element1, TData element2, TData element3) {
             var p = _position;
             HintSize(3);
 
-            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p);
+            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<TData>(Buffer), p);
             Unsafe.Add(ref b, 0) = element1;
             Unsafe.Add(ref b, 1) = element2;
             Unsafe.Add(ref b, 2) = element3;
@@ -158,7 +153,7 @@ namespace Gal.Core {
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -169,11 +164,11 @@ namespace Gal.Core {
         /// <param name="element3"></param>
         /// <param name="element4"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element1, T element2, T element3, T element4) {
+        public TSelf Write(TData element1, TData element2, TData element3, TData element4) {
             var p = _position;
             HintSize(4);
 
-            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p);
+            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<TData>(Buffer), p);
             Unsafe.Add(ref b, 0) = element1;
             Unsafe.Add(ref b, 1) = element2;
             Unsafe.Add(ref b, 2) = element3;
@@ -183,7 +178,7 @@ namespace Gal.Core {
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -195,11 +190,11 @@ namespace Gal.Core {
         /// <param name="element4"></param>
         /// <param name="element5"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element1, T element2, T element3, T element4, T element5) {
+        public TSelf Write(TData element1, TData element2, TData element3, TData element4, TData element5) {
             var p = _position;
             HintSize(5);
 
-            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p);
+            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<TData>(Buffer), p);
             Unsafe.Add(ref b, 0) = element1;
             Unsafe.Add(ref b, 1) = element2;
             Unsafe.Add(ref b, 2) = element3;
@@ -210,7 +205,7 @@ namespace Gal.Core {
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -223,11 +218,11 @@ namespace Gal.Core {
         /// <param name="element5"></param>
         /// <param name="element6"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(T element1, T element2, T element3, T element4, T element5, T element6) {
+        public TSelf Write(TData element1, TData element2, TData element3, TData element4, TData element5, TData element6) {
             var p = _position;
             HintSize(6);
 
-            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p);
+            ref var b = ref Unsafe.Add(ref MemoryMarshal.GetReference(Buffer), p);
             Unsafe.Add(ref b, 0) = element1;
             Unsafe.Add(ref b, 1) = element2;
             Unsafe.Add(ref b, 2) = element3;
@@ -239,7 +234,7 @@ namespace Gal.Core {
             _position = n;
             if (n > _length) _length = n;
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -247,14 +242,14 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="elements"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(ReadOnlySpan<T> elements) {
+        public TSelf Write(ReadOnlySpan<TData> elements) {
             var count = elements.Length;
-            if (count == 0) return this;
+            if (count == 0) return (TSelf)this;
             HintSize(count);
             elements.CopyTo(Buffer.AsSpan(_position));
             Advance(count);
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -262,14 +257,14 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="elements"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(ReadOnlyMemory<T> elements) {
+        public TSelf Write(ReadOnlyMemory<TData> elements) {
             var count = elements.Length;
-            if (count == 0) return this;
+            if (count == 0) return (TSelf)this;
             HintSize(count);
             elements.Span.CopyTo(Buffer.AsSpan(_position));
             Advance(count);
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -277,14 +272,14 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="elements"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Write(ReadOnlySequence<T> elements) {
+        public TSelf Write(ReadOnlySequence<TData> elements) {
             var count = (int)elements.Length;
-            if (count == 0) return this;
+            if (count == 0) return (TSelf)this;
             HintSize(count);
             elements.CopyTo(Buffer.AsSpan(_position));
             Advance(count);
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -303,9 +298,9 @@ namespace Gal.Core {
         /// <param name="size"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GenerateBuffer(int size) {
-            var buffer = ArrayPool<T>.Shared.Rent(size);
+            var buffer = ArrayPool<TData>.Shared.Rent(size);
             Buffer.AsSpan(0, Math.Min(_length, Buffer.Length)).CopyTo(buffer);
-            ArrayPool<T>.Shared.Return(Buffer, !typeof(T).IsValueType);
+            ArrayPool<TData>.Shared.Return(Buffer, !typeof(TData).IsValueType);
             Buffer = buffer;
         }
 
@@ -323,13 +318,13 @@ namespace Gal.Core {
         /// <para>不会真实的清理所有元素,只是将 position 和 length 置为 0 </para>
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Writer2<T> Clear() {
+        public TSelf Clear() {
             Length = 0;
-            return this;
+            return (TSelf)this;
         }
 
-        public Writer2<T> Discard() {
-            if (_position <= 0) return this;
+        public TSelf Discard() {
+            if (_position <= 0) return (TSelf)this;
             var l = _length - _position;
             if (l > 0) {
                 Buffer.AsSpan(_position, l).CopyTo(Buffer.AsSpan(0));
@@ -337,7 +332,7 @@ namespace Gal.Core {
                 _length = l;
             } else Clear();
 
-            return this;
+            return (TSelf)this;
         }
 
         /// <summary>
@@ -345,7 +340,7 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="sizeHint">需要的 span 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 span </param>
         /// <returns></returns>
-        public Span<T> GetSpan(int sizeHint = 0) {
+        public Span<TData> GetSpan(int sizeHint = 0) {
             Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
             if (sizeHint == 0) return Buffer.AsSpan(_position);
             HintSize(sizeHint);
@@ -357,7 +352,7 @@ namespace Gal.Core {
         /// </summary>
         /// <param name="sizeHint">需要的 memory 的长度, 不足则会扩充 buffer 到足够长度, 此参数为 0 , 则返回当前位置到 capacity 的 memory </param>
         /// <returns></returns>
-        public Memory<T> GetMemory(int sizeHint = 0) {
+        public Memory<TData> GetMemory(int sizeHint = 0) {
             Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
 
             if (sizeHint == 0) return Buffer.AsMemory(_position);
@@ -376,8 +371,11 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose() {
-            ArrayPool<T>.Shared.Return(Buffer, !typeof(T).IsValueType);
+            ArrayPool<TData>.Shared.Return(Buffer, !typeof(TData).IsValueType);
             Buffer = null;
         }
+    }
+
+    public class Writer2<T> : Writer2<Writer2<T>, T> {
     }
 }

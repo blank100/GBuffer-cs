@@ -14,7 +14,7 @@ public class Int32Benchmark {
 
     private ByteArray _byteArray;
 
-    private Buffer<byte> _buffer;
+    private Buffer2<byte> _buffer;
 
     private byte[] _SpanRead;
     private byte[] _SpanWrite;
@@ -36,7 +36,7 @@ public class Int32Benchmark {
 
         _byteArray = new ByteArray(size);
 
-        _buffer = new Buffer<byte>(size);
+        _buffer = new Buffer2<byte>(size);
 
         _SpanRead = new byte[size];
         _SpanWrite = new byte[size];

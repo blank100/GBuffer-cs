@@ -1,3 +1,5 @@
+
+using Gal.Core;
 #if !DEBUG
 using BenchmarkDotNet.Running;
 
@@ -19,6 +21,6 @@ namespace Serialize.Benchmark {
             // BenchmarkRunner.Run<VarInt64Benchmark>();
             // BenchmarkRunner.Run<UTF8Benchmark>();
 #endif
-		}
+        }
 	}
 }

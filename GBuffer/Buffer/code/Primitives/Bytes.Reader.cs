@@ -2,8 +2,6 @@
 #define ENDIAN_CHECK
 #define BIGENDIAN
 
-using System.Buffers.Binary;
-
 namespace Gal.Core {
     /// <summary>
     ///

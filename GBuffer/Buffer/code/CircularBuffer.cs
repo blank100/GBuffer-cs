@@ -30,8 +30,9 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public CircularBuffer(int capacity) {
+			if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+
 			_buffer = new T[capacity];
-			Clear();
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,14 +40,15 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool TryEnqueue(T item, bool overwrite = true) {
-			if (IsFull) {
+			var capacity = _buffer.Length;
+			if (_count == capacity) {
 				if (!overwrite) return false;
-				_tail = (_tail + 1) % Capacity;
+				_tail = NextIndex(_tail, capacity);
 				_count--;
 			}
 
 			_buffer[_head] = item;
-			_head = (_head + 1) % Capacity;
+			_head = NextIndex(_head, capacity);
 			_count++;
 			return true;
 		}
@@ -59,13 +61,16 @@ namespace Gal.Core
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool TryDequeue(out T item) {
-			if (IsEmpty) {
+			if (_count == 0) {
 				item = default;
 				return false;
 			}
 
-			item = _buffer[_tail];
-			_tail = (_tail + 1) % Capacity;
+			var tail = _tail;
+			item = _buffer[tail];
+			if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) _buffer[tail] = default;
+
+			_tail = NextIndex(tail, _buffer.Length);
 			_count--;
 			return true;
 		}
@@ -75,6 +80,13 @@ namespace Gal.Core
 			_head = 0;
 			_tail = 0;
 			_count = 0;
+			if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) Array.Clear(_buffer, 0, _buffer.Length);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static int NextIndex(int index, int capacity) {
+			index++;
+			return index == capacity ? 0 : index;
 		}
 	}
 }

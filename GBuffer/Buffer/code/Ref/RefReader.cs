@@ -30,7 +30,7 @@
 
         public ReadOnlySpan<T> Span {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _span[_position..];
+            get => _span.Slice(_position);
         }
 
         public RefReader(ReadOnlySpan<T> original) {

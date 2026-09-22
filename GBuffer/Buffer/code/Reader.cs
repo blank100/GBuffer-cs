@@ -37,7 +37,7 @@
 
         public ReadOnlySpan<T> Span {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => _buffer[_position..];
+			get => _buffer.AsSpan(_position);
         }
 
         public T this[int index] {
@@ -64,14 +64,14 @@
         public ReadOnlySpan<T> GetSpan(int count) {
             Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
             Debug.Assert(count <= _buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
-            return _buffer[_position..(_position + count)];
+            return _buffer.AsSpan(_position, count);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlyMemory<T> GetMemory(int count) {
             Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
             Debug.Assert(count <= _buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
-            return _buffer[_position..(_position + count)];
+            return _buffer.AsMemory(_position, count);
         }
 
         public void Dispose() { }

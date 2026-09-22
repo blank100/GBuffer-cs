@@ -61,7 +61,7 @@ namespace Gal.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GenerateBuffer(int size) {
             var buffer = ArrayPool<T>.Shared.Rent(size);
-            _span[.._position].CopyTo(buffer);
+            _span.Slice(0, _position).CopyTo(buffer);
             if (_buffer != null) ArrayPool<T>.Shared.Return(_buffer, !typeof(T).IsValueType);
             _span = _buffer = buffer;
         }

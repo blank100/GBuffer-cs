@@ -35,14 +35,14 @@
 		ReadOnlySpan<T> IReader<T>.GetSpan(int count) {
 			Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
 			Debug.Assert(count <= Buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
-			return Buffer[_position..(_position + count)];
+			return Buffer.AsSpan(_position, count);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		ReadOnlyMemory<T> IReader<T>.GetMemory(int count) {
 			Debug.Assert(count >= 0, $"参数{nameof(count)}不能为负数");
 			Debug.Assert(count <= Buffer.Length - _position, $"参数{nameof(count)}不能超过可读取数据的长度");
-			return Buffer[_position..(_position + count)];
+			return Buffer.AsMemory(_position, count);
 		}
 	}
 }

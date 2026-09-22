@@ -354,7 +354,7 @@
 			Span<byte> buffer = stackalloc byte[10];
 			var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
 			self.HintSize(e);
-			buffer[..e].CopyTo(self.Span);
+			buffer.Slice(0, e).CopyTo(self.Span);
 			self.Advance(e);
 <#
         if (returnSelf) {
@@ -395,7 +395,7 @@
             var span = self.Span;
             if (len > span.Length) throw new("error in ReadUtf8 => read data overflow");
 
-            span = span[..len];
+            span = span.Slice(0, len);
             var t = System.Text.Encoding.UTF8.GetString(span);
             self.Advance(len);
             return t;
@@ -420,7 +420,7 @@
             var maxLength = chars.Length * 3;
 
             if (self.WritableCount >= maxLength + 2) {
-                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span[2..]);
+                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span.Slice(2));
                 if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
                 self.WriteUInt16((ushort)count);
                 self.Advance(count);

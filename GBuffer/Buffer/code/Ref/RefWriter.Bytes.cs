@@ -81,7 +81,7 @@ namespace Gal.Core {
 			Span<byte> buffer = stackalloc byte[10];
 			var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
 			self.HintSize(e);
-			buffer[..e].CopyTo(self.Span);
+			buffer.Slice(0, e).CopyTo(self.Span);
 			self.Advance(e);
         }
 
@@ -100,7 +100,7 @@ namespace Gal.Core {
             var maxLength = chars.Length * 3;
 
             if (self.WritableCount >= maxLength + 2) {
-                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span[2..]);
+                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span.Slice(2));
                 if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
                 self.WriteUInt16((ushort)count);
                 self.Advance(count);

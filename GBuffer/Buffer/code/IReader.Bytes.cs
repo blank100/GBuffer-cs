@@ -122,7 +122,7 @@ namespace Gal.Core {
             var span = self.Span;
             if (len > span.Length) throw new("error in ReadUtf8 => read data overflow");
 
-            span = span[..len];
+            span = span.Slice(0, len);
             var t = System.Text.Encoding.UTF8.GetString(span);
             self.Advance(len);
             return t;

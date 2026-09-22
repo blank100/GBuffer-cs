@@ -98,7 +98,7 @@ namespace Gal.Core
 		/// </summary>
 		public Span<T> WrittenSpan {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => _span[.._length];
+			get => _span.Slice(0, _length);
 		}
 
 		/// <summary>
@@ -107,7 +107,7 @@ namespace Gal.Core
 		/// </summary>
 		public Span<T> Span {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => _span[_position..];
+			get => _span.Slice(_position);
 		}
 
 		public RefWriter(Span<T> buffer) {
@@ -275,7 +275,7 @@ namespace Gal.Core
 			var count = elements.Length;
 			if(count == 0) return;
 			HintSize(count);
-			elements.CopyTo(_span[_position..]);
+			elements.CopyTo(_span.Slice(_position));
 			Advance(count);
 		}
 
@@ -288,7 +288,7 @@ namespace Gal.Core
 			var count = elements.Length;
 			if(count == 0) return;
 			HintSize(count);
-			elements.Span.CopyTo(_span[_position..]);
+			elements.Span.CopyTo(_span.Slice(_position));
 			Advance(count);
 		}
 
@@ -301,7 +301,7 @@ namespace Gal.Core
 			var count = (int)elements.Length;
 			if(count == 0) return;
 			HintSize(count);
-			elements.CopyTo(_span[_position..]);
+			elements.CopyTo(_span.Slice(_position));
 			Advance(count);
 		}
 
@@ -322,7 +322,7 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void GenerateBuffer(int size) {
 			var buffer = ArrayPool<T>.Shared.Rent(size);
-			_span[..Math.Min(_length, _span.Length)].CopyTo(buffer);
+			_span.Slice(0, Math.Min(_length, _span.Length)).CopyTo(buffer);
 			if (_buffer != null) ArrayPool<T>.Shared.Return(_buffer, !typeof(T).IsValueType);
 			_span = _buffer = buffer;
 		}
@@ -355,9 +355,9 @@ namespace Gal.Core
 		/// <returns></returns>
 		public Span<T> GetSpan(int sizeHint = 0) {
 			Debug.Assert(sizeHint >= 0, $"The parameter of {nameof(sizeHint)} cannot be negative");
-			if (sizeHint == 0) return _span[_position..];
+			if (sizeHint == 0) return _span.Slice(_position);
 			HintSize(sizeHint);
-			return _span[_position..];
+			return _span.Slice(_position);
 		}
 
 		/// <summary>

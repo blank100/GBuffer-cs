@@ -6,16 +6,16 @@ using Perfolizer.Horology;
 public class BenchmarkConfig : ManualConfig {
     public BenchmarkConfig() {
         AddJob(Job.Default
-            .WithWarmupCount(5) // 增加预热次数，确保 JIT 彻底完成
-            .WithIterationCount(10) // 保持 10 轮正式迭代
-            // --- 核心修复点 ---
-            // 方式 A：强制单次迭代至少运行 250 毫秒（推荐，框架会自动计算调用次数）
-            // .WithMinIterationTime(TimeInterval.FromMilliseconds(250))
-            // 方式 B：如果方法极快，手动指定每轮迭代内部执行方法的次数（如 1000 次）
-            // .WithInvocationCount(1000)
+            .WithWarmupCount(10)
+            .WithIterationCount(15)
+            // 让 BenchmarkDotNet 自动提高调用次数，避免极短迭代受到计时和 JIT 噪声影响。
+            .WithMinIterationTime(TimeInterval.FromMilliseconds(100))
+            // 微基准固定使用优化后的机器码，避免 Tier0 到 Tier1 的过渡混入结果。
+            .WithEnvironmentVariable("DOTNET_TieredCompilation", "0")
+            .WithEnvironmentVariable("DOTNET_TieredPGO", "0")
         );
 
-        // 建议增加 Median（中位数）和 Ratio（对比倍数），对分析双峰很有帮助
+        // 中位数和标准差比均值更能识别 JIT、GC 或频率变化造成的双峰结果。
         AddColumn(TargetMethodColumn.Method,
             StatisticColumn.Mean,
             StatisticColumn.Median,

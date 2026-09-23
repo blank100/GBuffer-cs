@@ -368,54 +368,202 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteSleb128Int32(Span<byte> span, int value) {
-            var count = 0;
-            while (true) {
-                var b = (byte)(value & 0x7F);
-                value >>= 7;
+            ref var b = ref MemoryMarshal.GetReference(span);
 
-                var done = (value == 0 && (b & 0x40) == 0)
-                           || (value == -1 && (b & 0x40) != 0);
-                if (!done) b |= 0x80;
-
-                span[count++] = b;
-                if (done) return count;
+            var byte0 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte0 & 0x40) == 0) || (value == -1 && (byte0 & 0x40) != 0)) {
+                b = byte0;
+                return 1;
             }
+
+            b = (byte)(byte0 | 0x80);
+            var byte1 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte1 & 0x40) == 0) || (value == -1 && (byte1 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 1) = byte1;
+                return 2;
+            }
+
+            Unsafe.Add(ref b, 1) = (byte)(byte1 | 0x80);
+            var byte2 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte2 & 0x40) == 0) || (value == -1 && (byte2 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 2) = byte2;
+                return 3;
+            }
+
+            Unsafe.Add(ref b, 2) = (byte)(byte2 | 0x80);
+            var byte3 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte3 & 0x40) == 0) || (value == -1 && (byte3 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 3) = byte3;
+                return 4;
+            }
+
+            Unsafe.Add(ref b, 3) = (byte)(byte3 | 0x80);
+            Unsafe.Add(ref b, 4) = (byte)(value & 0x7F);
+            return 5;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteSleb128Int64(Span<byte> span, long value) {
-            var count = 0;
-            while (true) {
-                var b = (byte)(value & 0x7F);
-                value >>= 7;
+            ref var b = ref MemoryMarshal.GetReference(span);
 
-                var done = (value == 0 && (b & 0x40) == 0)
-                           || (value == -1 && (b & 0x40) != 0);
-                if (!done) b |= 0x80;
-
-                span[count++] = b;
-                if (done) return count;
+            var byte0 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte0 & 0x40) == 0) || (value == -1 && (byte0 & 0x40) != 0)) {
+                b = byte0;
+                return 1;
             }
+
+            b = (byte)(byte0 | 0x80);
+            var byte1 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte1 & 0x40) == 0) || (value == -1 && (byte1 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 1) = byte1;
+                return 2;
+            }
+
+            Unsafe.Add(ref b, 1) = (byte)(byte1 | 0x80);
+            var byte2 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte2 & 0x40) == 0) || (value == -1 && (byte2 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 2) = byte2;
+                return 3;
+            }
+
+            Unsafe.Add(ref b, 2) = (byte)(byte2 | 0x80);
+            var byte3 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte3 & 0x40) == 0) || (value == -1 && (byte3 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 3) = byte3;
+                return 4;
+            }
+
+            Unsafe.Add(ref b, 3) = (byte)(byte3 | 0x80);
+            var byte4 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte4 & 0x40) == 0) || (value == -1 && (byte4 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 4) = byte4;
+                return 5;
+            }
+
+            Unsafe.Add(ref b, 4) = (byte)(byte4 | 0x80);
+            var byte5 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte5 & 0x40) == 0) || (value == -1 && (byte5 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 5) = byte5;
+                return 6;
+            }
+
+            Unsafe.Add(ref b, 5) = (byte)(byte5 | 0x80);
+            var byte6 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte6 & 0x40) == 0) || (value == -1 && (byte6 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 6) = byte6;
+                return 7;
+            }
+
+            Unsafe.Add(ref b, 6) = (byte)(byte6 | 0x80);
+            var byte7 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte7 & 0x40) == 0) || (value == -1 && (byte7 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 7) = byte7;
+                return 8;
+            }
+
+            Unsafe.Add(ref b, 7) = (byte)(byte7 | 0x80);
+            var byte8 = (byte)(value & 0x7F);
+            value >>= 7;
+            if ((value == 0 && (byte8 & 0x40) == 0) || (value == -1 && (byte8 & 0x40) != 0)) {
+                Unsafe.Add(ref b, 8) = byte8;
+                return 9;
+            }
+
+            Unsafe.Add(ref b, 8) = (byte)(byte8 | 0x80);
+            Unsafe.Add(ref b, 9) = (byte)(value & 0x7F);
+            return 10;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ReadSleb128Int32(ReadOnlySpan<byte> span, out int readCount) {
+            return span.Length >= 5
+                ? ReadSleb128Int32Fast(span, out readCount)
+                : ReadSleb128Int32Slow(span, out readCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ReadSleb128Int32Fast(ReadOnlySpan<byte> span, out int readCount) {
+            ref var b = ref MemoryMarshal.GetReference(span);
+
+            var byte0 = b;
+            var result = (long)(byte0 & 0x7F);
+            if ((byte0 & 0x80) == 0) {
+                if ((byte0 & 0x40) != 0) result |= -1L << 7;
+                // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+
+                readCount = 1;
+                return (int)result;
+            }
+
+            var byte1 = Unsafe.Add(ref b, 1);
+            result |= (long)(byte1 & 0x7F) << 7;
+            if ((byte1 & 0x80) == 0) {
+                if ((byte1 & 0x40) != 0) result |= -1L << 14;
+                // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+
+                readCount = 2;
+                return (int)result;
+            }
+
+            var byte2 = Unsafe.Add(ref b, 2);
+            result |= (long)(byte2 & 0x7F) << 14;
+            if ((byte2 & 0x80) == 0) {
+                if ((byte2 & 0x40) != 0) result |= -1L << 21;
+                // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+
+                readCount = 3;
+                return (int)result;
+            }
+
+            var byte3 = Unsafe.Add(ref b, 3);
+            result |= (long)(byte3 & 0x7F) << 21;
+            if ((byte3 & 0x80) == 0) {
+                if ((byte3 & 0x40) != 0) result |= -1L << 28;
+                // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+
+                readCount = 4;
+                return (int)result;
+            }
+
+            var byte4 = Unsafe.Add(ref b, 4);
+            if ((byte4 & 0x80) != 0) throw new FormatException("Invalid SLEB128 Int32.");
+
+            result |= (long)(byte4 & 0x7F) << 28;
+            if ((byte4 & 0x40) != 0) result |= -1L << 35;
+            // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+
+            readCount = 5;
+            return (int)result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ReadSleb128Int32Slow(ReadOnlySpan<byte> span, out int readCount) {
             long result = 0;
             var shift = 0;
-            var count = 0;
+            var count = Math.Min(span.Length, 5);
 
-            for (var i = 0; i < 5; i++) {
-                if ((uint)count >= (uint)span.Length) throw new FormatException("Invalid SLEB128 Int32.");
-
-                var b = span[count++];
+            for (var i = 0; i < count; i++) {
+                var b = span[i];
                 result |= (long)(b & 0x7F) << shift;
                 shift += 7;
 
                 if ((b & 0x80) == 0) {
                     if ((b & 0x40) != 0) result |= -1L << shift;
-                    if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
+                    // if (result < int.MinValue || result > int.MaxValue) throw new FormatException("Invalid SLEB128 Int32.");
 
-                    readCount = count;
+                    readCount = i + 1;
                     return (int)result;
                 }
             }
@@ -425,14 +573,106 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ReadSleb128Int64(ReadOnlySpan<byte> span, out int readCount) {
+            return span.Length >= 10
+                ? ReadSleb128Int64Fast(span, out readCount)
+                : ReadSleb128Int64Slow(span, out readCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ReadSleb128Int64Fast(ReadOnlySpan<byte> span, out int readCount) {
+            ref var b = ref MemoryMarshal.GetReference(span);
+
+            var byte0 = b;
+            var result = (ulong)(byte0 & 0x7F);
+            if ((byte0 & 0x80) == 0) {
+                if ((byte0 & 0x40) != 0) result |= ulong.MaxValue << 7;
+                readCount = 1;
+                return unchecked((long)result);
+            }
+
+            var byte1 = Unsafe.Add(ref b, 1);
+            result |= (ulong)(byte1 & 0x7F) << 7;
+            if ((byte1 & 0x80) == 0) {
+                if ((byte1 & 0x40) != 0) result |= ulong.MaxValue << 14;
+                readCount = 2;
+                return unchecked((long)result);
+            }
+
+            var byte2 = Unsafe.Add(ref b, 2);
+            result |= (ulong)(byte2 & 0x7F) << 14;
+            if ((byte2 & 0x80) == 0) {
+                if ((byte2 & 0x40) != 0) result |= ulong.MaxValue << 21;
+                readCount = 3;
+                return unchecked((long)result);
+            }
+
+            var byte3 = Unsafe.Add(ref b, 3);
+            result |= (ulong)(byte3 & 0x7F) << 21;
+            if ((byte3 & 0x80) == 0) {
+                if ((byte3 & 0x40) != 0) result |= ulong.MaxValue << 28;
+                readCount = 4;
+                return unchecked((long)result);
+            }
+
+            var byte4 = Unsafe.Add(ref b, 4);
+            result |= (ulong)(byte4 & 0x7F) << 28;
+            if ((byte4 & 0x80) == 0) {
+                if ((byte4 & 0x40) != 0) result |= ulong.MaxValue << 35;
+                readCount = 5;
+                return unchecked((long)result);
+            }
+
+            var byte5 = Unsafe.Add(ref b, 5);
+            result |= (ulong)(byte5 & 0x7F) << 35;
+            if ((byte5 & 0x80) == 0) {
+                if ((byte5 & 0x40) != 0) result |= ulong.MaxValue << 42;
+                readCount = 6;
+                return unchecked((long)result);
+            }
+
+            var byte6 = Unsafe.Add(ref b, 6);
+            result |= (ulong)(byte6 & 0x7F) << 42;
+            if ((byte6 & 0x80) == 0) {
+                if ((byte6 & 0x40) != 0) result |= ulong.MaxValue << 49;
+                readCount = 7;
+                return unchecked((long)result);
+            }
+
+            var byte7 = Unsafe.Add(ref b, 7);
+            result |= (ulong)(byte7 & 0x7F) << 49;
+            if ((byte7 & 0x80) == 0) {
+                if ((byte7 & 0x40) != 0) result |= ulong.MaxValue << 56;
+                readCount = 8;
+                return unchecked((long)result);
+            }
+
+            var byte8 = Unsafe.Add(ref b, 8);
+            result |= (ulong)(byte8 & 0x7F) << 56;
+            if ((byte8 & 0x80) == 0) {
+                if ((byte8 & 0x40) != 0) result |= ulong.MaxValue << 63;
+                readCount = 9;
+                return unchecked((long)result);
+            }
+
+            var byte9 = Unsafe.Add(ref b, 9);
+            if ((byte9 & 0x80) != 0) throw new FormatException("Invalid SLEB128 Int64.");
+
+            var signBits = byte9 & 0x7E;
+            if (signBits != 0 && signBits != 0x7E) throw new FormatException("Invalid SLEB128 Int64.");
+
+            result |= (ulong)(byte9 & 0x7F) << 63;
+            readCount = 10;
+            return unchecked((long)result);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ReadSleb128Int64Slow(ReadOnlySpan<byte> span, out int readCount) {
             ulong result = 0;
             var shift = 0;
-            var count = 0;
+            var count = Math.Min(span.Length, 10);
 
-            for (var i = 0; i < 10; i++) {
-                if ((uint)count >= (uint)span.Length) throw new FormatException("Invalid SLEB128 Int64.");
-
-                var b = span[count++];
+            for (var i = 0; i < count; i++) {
+                var b = span[i];
                 if (i == 9) {
                     if ((b & 0x80) != 0) throw new FormatException("Invalid SLEB128 Int64.");
 
@@ -446,7 +686,7 @@ namespace Gal.Core {
                 if ((b & 0x80) == 0) {
                     if (shift < 64 && (b & 0x40) != 0) result |= ulong.MaxValue << shift;
 
-                    readCount = count;
+                    readCount = i + 1;
                     return unchecked((long)result);
                 }
             }

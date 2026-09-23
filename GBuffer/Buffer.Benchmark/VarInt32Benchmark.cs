@@ -13,17 +13,46 @@ public class VarInt32Benchmark {
 
     private Buffer<byte> _bufferRead;
     private Buffer<byte> _bufferWrite;
+    private Buffer<byte> _bufferVarIntRead;
+    private Buffer<byte> _bufferVarIntWrite;
+    private Buffer<byte> _bufferSleb128Read;
+    private Buffer<byte> _bufferSleb128Write;
+    private readonly uint[] _testValues = {
+        0,
+        1,
+        127,
+        128,
+        16383,
+        16384,
+        2097151,
+        2097152,
+        268435455,
+        268435456,
+        uint.MaxValue
+    };
+    private readonly int[] _signedTestValues = {
+        int.MinValue,
+        -80388607,
+        -32767,
+        -127,
+        -1,
+        0,
+        1,
+        128,
+        32768,
+        80388608,
+        int.MaxValue
+    };
 
-    private readonly int[] _testValues = { 0, 1, 128, 32768, 80388608, -1, -127, -32767, -80388607 };
-
-    private const int ValueCount = 9;
+    private const int ValueCount = 11;
+    private const int SignedValueCount = 11;
     private const int ITERATIONS = 100_000;
 
     [GlobalSetup]
     public void Setup() {
         if (_testValues.Length != ValueCount) throw new InvalidOperationException("ValueCount does not match _testValues.");
 
-        var maxBytesPerInt = 5; // VarInt32 最大 5 字节
+        var maxBytesPerInt = 5; // VarUInt32 最大 5 字节
         var size = ITERATIONS * ValueCount * maxBytesPerInt;
 
         _byteArrayRead = new ByteArray(size);
@@ -32,11 +61,22 @@ public class VarInt32Benchmark {
         _bufferRead = new Buffer<byte>(size);
         _bufferWrite = new Buffer<byte>(size);
 
+        var signedSize = ITERATIONS * SignedValueCount * maxBytesPerInt;
+        _bufferVarIntRead = new Buffer<byte>(signedSize);
+        _bufferVarIntWrite = new Buffer<byte>(signedSize);
+        _bufferSleb128Read = new Buffer<byte>(signedSize);
+        _bufferSleb128Write = new Buffer<byte>(signedSize);
+
         // 只为读取基准准备缓冲区
         for (var i = 0; i < ITERATIONS; i++) {
             foreach (var value in _testValues) {
-                _byteArrayRead.WriteULEB128(value);
-                _bufferRead.WriteVarInt32(value);
+                _byteArrayRead.WriteULEB128(unchecked((int)value));
+                _bufferRead.WriteVarUInt32(value);
+            }
+
+            foreach (var value in _signedTestValues) {
+                _bufferVarIntRead.WriteVarInt32(value);
+                _bufferSleb128Read.WriteSleb128Int32(value);
             }
         }
     }
@@ -47,6 +87,10 @@ public class VarInt32Benchmark {
         _byteArrayWrite.Position = 0;
         _bufferRead.Position = 0;
         _bufferWrite.Position = 0;
+        _bufferVarIntRead.Position = 0;
+        _bufferVarIntWrite.Position = 0;
+        _bufferSleb128Read.Position = 0;
+        _bufferSleb128Write.Position = 0;
     }
 
     // ------------------
@@ -58,7 +102,7 @@ public class VarInt32Benchmark {
     public long ByteArray_WriteULEB128() {
         var values = _testValues;
         for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in values) _byteArrayWrite.WriteULEB128(v);
+            foreach (var v in values) _byteArrayWrite.WriteULEB128(unchecked((int)v));
         }
 
         return _byteArrayWrite.Position;
@@ -66,13 +110,35 @@ public class VarInt32Benchmark {
 
     [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Write")]
-    public long Buffer_WriteVarInt32() {
+    public long Buffer_WriteVarUInt32() {
         var values = _testValues;
         for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in values) _bufferWrite.WriteVarInt32(v);
+            foreach (var v in values) _bufferWrite.WriteVarUInt32(v);
         }
 
         return _bufferWrite.Position;
+    }
+
+    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
+    [BenchmarkCategory("Write")]
+    public long Buffer_WriteVarInt32() {
+        var values = _signedTestValues;
+        for (var i = 0; i < ITERATIONS; i++) {
+            foreach (var v in values) _bufferVarIntWrite.WriteVarInt32(v);
+        }
+
+        return _bufferVarIntWrite.Position;
+    }
+
+    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
+    [BenchmarkCategory("Write")]
+    public long Buffer_WriteSleb128Int32() {
+        var values = _signedTestValues;
+        for (var i = 0; i < ITERATIONS; i++) {
+            foreach (var v in values) _bufferSleb128Write.WriteSleb128Int32(v);
+        }
+
+        return _bufferSleb128Write.Position;
     }
 
     // ------------------
@@ -81,13 +147,13 @@ public class VarInt32Benchmark {
 
     [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
-    public int ByteArray_ReadULEB128() {
+    public uint ByteArray_ReadULEB128() {
         _byteArrayRead.Position = 0;
-        var result = 0;
+        uint result = 0;
 
         for (var i = 0; i < ITERATIONS; i++) {
             foreach (var v in _testValues) {
-                result ^= _byteArrayRead.ReadULEB128();
+                result ^= unchecked((uint)_byteArrayRead.ReadULEB128());
             }
         }
 
@@ -96,13 +162,43 @@ public class VarInt32Benchmark {
 
     [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
-    public int Buffer_ReadVarInt32() {
+    public uint Buffer_ReadVarUInt32() {
         _bufferRead.Position = 0;
-        var result = 0;
+        uint result = 0;
 
         for (var i = 0; i < ITERATIONS; i++) {
             foreach (var v in _testValues) {
-                result ^= _bufferRead.ReadVarInt32();
+                result ^= _bufferRead.ReadVarUInt32();
+            }
+        }
+
+        return result;
+    }
+
+    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
+    [BenchmarkCategory("Read")]
+    public int Buffer_ReadVarInt32() {
+        _bufferVarIntRead.Position = 0;
+        var result = 0;
+
+        for (var i = 0; i < ITERATIONS; i++) {
+            foreach (var v in _signedTestValues) {
+                result ^= _bufferVarIntRead.ReadVarInt32();
+            }
+        }
+
+        return result;
+    }
+
+    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
+    [BenchmarkCategory("Read")]
+    public int Buffer_ReadSleb128Int32() {
+        _bufferSleb128Read.Position = 0;
+        var result = 0;
+
+        for (var i = 0; i < ITERATIONS; i++) {
+            foreach (var v in _signedTestValues) {
+                result ^= _bufferSleb128Read.ReadSleb128Int32();
             }
         }
 

@@ -46,6 +46,7 @@ namespace Gal.Core {
 			if ((byte3 & 0x80) == 0) { readCount = 4; return result; }
 
 			var byte4 = Unsafe.Add(ref b, 4);
+			if ((byte4 & 0xF0) != 0) throw new FormatException("Invalid VarUInt32");
 			result |= (uint)(byte4 & 0x0F) << 28;
 
 			readCount = 5; return result;
@@ -155,7 +156,8 @@ namespace Gal.Core {
 			if ((byte8 & 0x80) == 0) { readCount = 9; return result; }
 
 			var byte9 = Unsafe.Add(ref b, 9);
-			result |= (ulong)byte9 << 63;
+			if ((byte9 & 0xFE) != 0) throw new FormatException("Invalid VarUInt64: Overflows 64-bit range.");
+			result |= (ulong)(byte9 & 0x01) << 63;
 
 			readCount = 10; return result;
             //@formatter:on

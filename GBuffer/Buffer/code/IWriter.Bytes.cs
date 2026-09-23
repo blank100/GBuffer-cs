@@ -10,125 +10,180 @@ using System.Runtime.InteropServices;
 
 namespace Gal.Core {
     public static class WriterByteEx {
- 
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteInt8(this IWriter<byte> self, sbyte value){
+        public static Writer<byte> WriteInt8(this Writer<byte> self, sbyte value) {
             self.Write((byte)value);
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteUInt8(this IWriter<byte> self, byte value){
+        public static Writer<byte> WriteUInt8(this Writer<byte> self, byte value) {
             self.Write(value);
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteBoolean(this IWriter<byte> self, bool value){
+        public static Writer<byte> WriteBoolean(this Writer<byte> self, bool value) {
             self.Write(value ? (byte)1 : (byte)0);
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteUInt16(this IWriter<byte> self, UInt16 value) {
-			var span = self.GetSpan(2);
-            span[1] = (byte)(value >> 8);
-			span[0] = (byte)value;
-			self.Advance(2);
+        public static Writer<byte> WriteUInt16(this Writer<byte> self, ushort value) {
+            self.Advance(SpanByteUtils.WriteUInt16(self.GetSpan(sizeof(ushort)), value, false));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteInt16(this IWriter<byte> self, Int16 value) {
-			var span = self.GetSpan(2);
-            span[1] = (byte)(value >> 8);
-			span[0] = (byte)value;
-			self.Advance(2);
+        public static Writer<byte> WriteInt16(this Writer<byte> self, short value) {
+            self.Advance(SpanByteUtils.WriteInt16(self.GetSpan(sizeof(short)), value, false));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteInt32(this IWriter<byte> self, Int32 value) {
-			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(self.GetSpan(4)), !BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            self.Advance(4);
+        public static Writer<byte> WriteInt32(this Writer<byte> self, Int32 value) {
+            self.Advance(SpanByteUtils.WriteInt32(self.GetSpan(4), value, false));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteUInt32(this IWriter<byte> self, UInt32 value) {
-			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(self.GetSpan(4)), !BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            self.Advance(4);
+        public static Writer<byte> WriteUInt32(this Writer<byte> self, UInt32 value) {
+            self.Advance(SpanByteUtils.WriteUInt32(self.GetSpan(4), value, false));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteInt64(this IWriter<byte> self, Int64 value) {
-			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(self.GetSpan(8)), !BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            self.Advance(8);
+        public static Writer<byte> WriteInt64(this Writer<byte> self, Int64 value) {
+            self.Advance(SpanByteUtils.WriteInt64(self.GetSpan(8), value, false));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteUInt64(this IWriter<byte> self, UInt64 value) {
-			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(self.GetSpan(8)), BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            self.Advance(8);
+        public static Writer<byte> WriteUInt64(this Writer<byte> self, UInt64 value) {
+            self.Advance(SpanByteUtils.WriteUInt64(self.GetSpan(8), value, false));
+
             return self;
+
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe IWriter<byte> WriteFloat(this IWriter<byte> self, float value) => self.WriteInt32(*(int*) &value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe IWriter<byte> WriteDouble(this IWriter<byte> self, double value) => self.WriteInt64(*(long*) &value);
+        public static Writer<byte> WriteFloat(this Writer<byte> self, float value) {
+            self.Advance(SpanByteUtils.WriteFloat(self.GetSpan(sizeof(float)), value));
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteVarUInt32(this IWriter<byte> self, uint value) {
-            var span = self.GetSpan(5);
-            self.Advance(SpanByteUtils.WriteVarUInt32(ref span, value));
             return self;
+
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteVarInt32(this IWriter<byte> self, int value) => self.WriteVarUInt32(ZigZagUtils.EncodeZigZag32(value));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteVarUInt64(this IWriter<byte> self, ulong value) {
-			Span<byte> buffer = stackalloc byte[10];
-			var e = SpanByteUtils.WriteVarUInt64(ref buffer, value);
-			self.HintSize(e);
-			buffer.Slice(0, e).CopyTo(self.Span);
-			self.Advance(e);
+        public static Writer<byte> WriteDouble(this Writer<byte> self, double value) {
+            self.Advance(SpanByteUtils.WriteDouble(self.GetSpan(sizeof(double)), value));
+
             return self;
+
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IWriter<byte> WriteVarInt64(this IWriter<byte> self, long value){
-            self.WriteVarUInt64(ZigZagUtils.EncodeZigZag64(value));
+        public static Writer<byte> WriteVarUInt32(this Writer<byte> self, uint value) {
+            self.Advance(SpanByteUtils.WriteVarUInt32(self.GetSpan(5), value));
+
             return self;
+
         }
 
-        public static unsafe IWriter<byte> WriteUtf8(this IWriter<byte> self, string value) {
-			if (string.IsNullOrEmpty(value)) {
-				self.WriteInt16(0);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteVarInt32(this Writer<byte> self, int value) {
+            self.Advance(SpanByteUtils.WriteVarInt32(self.GetSpan(5), value));
+
+            return self;
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteVarUInt64(this Writer<byte> self, ulong value) {
+            self.Advance(SpanByteUtils.WriteVarUInt64(self.GetSpan(10), value));
+
+            return self;
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteVarInt64(this Writer<byte> self, long value) {
+            self.Advance(SpanByteUtils.WriteVarInt64(self.GetSpan(10), value));
+
+            return self;
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteSleb128Int32(this Writer<byte> self, int value) {
+            self.Advance(SpanByteUtils.WriteSleb128Int32(self.GetSpan(5), value));
+
+            return self;
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteSleb128Int64(this Writer<byte> self, long value) {
+            self.Advance(SpanByteUtils.WriteSleb128Int64(self.GetSpan(10), value));
+
+            return self;
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Writer<byte> WriteUtf8(this Writer<byte> self, string value) {
+            if (string.IsNullOrEmpty(value)) {
+                self.Advance(SpanByteUtils.WriteUtf8(self.GetSpan(sizeof(ushort)), value));
                 return self;
-			}
-
-			ReadOnlySpan<char> chars = value;
-            var maxLength = chars.Length * 3;
-
-            if (self.WritableCount >= maxLength + 2) {
-                var count = System.Text.Encoding.UTF8.GetBytes(chars, self.Span.Slice(2));
-                if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
-                self.WriteUInt16((ushort)count);
-                self.Advance(count);
-            } else {
-                var count = System.Text.Encoding.UTF8.GetByteCount(chars);
-                self.WriteUInt16((ushort)count);
-                var span = self.GetSpan(count);
-                System.Text.Encoding.UTF8.GetBytes(chars, span);
-                self.Advance(count);
             }
+
+            var maxLength = value.Length * 3;
+            if (self.WritableCount >= maxLength + sizeof(ushort)) {
+                self.Advance(SpanByteUtils.WriteUtf8(self.Span, value));
+            } else {
+                var count = System.Text.Encoding.UTF8.GetByteCount(value);
+                if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
+                self.Advance(SpanByteUtils.WriteUtf8(self.GetSpan(count + sizeof(ushort)), value));
+            }
+
             return self;
+
         }
+
     }
 }

@@ -24,7 +24,7 @@ public class VarInt64Benchmark {
         549755813888L,
         140737488355328L,
         36028797018963968L,
-        9223372036854775807L
+        9223372036854775807L,
         -1,
         -127,
         -32767,
@@ -35,12 +35,15 @@ public class VarInt64Benchmark {
         -9223372036854775807L
     };
 
-    private const int ITERATIONS = 100_000_00;
+    private const int ValueCount = 18;
+    private const int ITERATIONS = 20_000;
 
     [GlobalSetup]
     public void Setup() {
-        int maxBytesPerInt = 10; // VarInt32 最大 5 字节
-        int size = ITERATIONS * _testValues.Length * maxBytesPerInt;
+        if (_testValues.Length != ValueCount) throw new InvalidOperationException("ValueCount does not match _testValues.");
+
+        int maxBytesPerInt = 10; // VarInt64 最大 10 字节
+        int size = ITERATIONS * ValueCount * maxBytesPerInt;
 
         _byteArrayRead = new ByteArray(size);
         _byteArrayWrite = new ByteArray(size);
@@ -69,7 +72,7 @@ public class VarInt64Benchmark {
     // Write 基准
     // ------------------
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Write")]
     public long ByteArray_WriteULEB128() {
         var values = _testValues;
@@ -80,7 +83,7 @@ public class VarInt64Benchmark {
         return _byteArrayWrite.Position;
     }
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Write")]
     public long Buffer_WriteVarInt64() {
         var values = _testValues;
@@ -95,7 +98,7 @@ public class VarInt64Benchmark {
     // Read 基准
     // ------------------
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
     public long ByteArray_ReadULEB128() {
         _byteArrayRead.Position = 0;
@@ -110,7 +113,7 @@ public class VarInt64Benchmark {
         return result;
     }
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
     public long Buffer_ReadVarInt64() {
         _bufferRead.Position = 0;

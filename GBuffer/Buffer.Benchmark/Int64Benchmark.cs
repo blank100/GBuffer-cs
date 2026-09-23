@@ -19,8 +19,6 @@ public class Int64Benchmark {
 
     private Buffer<byte> _buffer;
 
-    private Buffer<byte> _buffer2;
-
     private const long Value = 123456;
     private const int MaxN = 4096;
 
@@ -39,7 +37,6 @@ public class Int64Benchmark {
         _byteArray = new ByteArray(size);
 
         _buffer = new Buffer<byte>(size);
-        _buffer2 = new Buffer<byte>(size);
 
         _readOffset = 8192 * 2;
 
@@ -47,13 +44,11 @@ public class Int64Benchmark {
         _byteArray.Length = size;
         _byteArray.Position = _readOffset;
         _buffer.Position = _readOffset;
-        _buffer2.Position = _readOffset;
 
         for (int i = 0; i < MaxN; i++) {
             _writer.Write(Value);
             _byteArray.WriteInt64(Value);
             _buffer.WriteInt64(Value);
-            _buffer2.WriteInt64(Value);
         }
 
         _writer.Flush();

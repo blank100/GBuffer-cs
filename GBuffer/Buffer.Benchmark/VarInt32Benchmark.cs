@@ -16,12 +16,15 @@ public class VarInt32Benchmark {
 
     private readonly int[] _testValues = { 0, 1, 128, 32768, 80388608, -1, -127, -32767, -80388607 };
 
-    private const int ITERATIONS = 100_000_00;
+    private const int ValueCount = 9;
+    private const int ITERATIONS = 100_000;
 
     [GlobalSetup]
     public void Setup() {
+        if (_testValues.Length != ValueCount) throw new InvalidOperationException("ValueCount does not match _testValues.");
+
         var maxBytesPerInt = 5; // VarInt32 最大 5 字节
-        var size = ITERATIONS * _testValues.Length * maxBytesPerInt;
+        var size = ITERATIONS * ValueCount * maxBytesPerInt;
 
         _byteArrayRead = new ByteArray(size);
         _byteArrayWrite = new ByteArray(size);
@@ -50,7 +53,7 @@ public class VarInt32Benchmark {
     // Write 基准
     // ------------------
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Write")]
     public long ByteArray_WriteULEB128() {
         var values = _testValues;
@@ -61,7 +64,7 @@ public class VarInt32Benchmark {
         return _byteArrayWrite.Position;
     }
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Write")]
     public long Buffer_WriteVarInt32() {
         var values = _testValues;
@@ -76,7 +79,7 @@ public class VarInt32Benchmark {
     // Read 基准
     // ------------------
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
     public int ByteArray_ReadULEB128() {
         _byteArrayRead.Position = 0;
@@ -91,7 +94,7 @@ public class VarInt32Benchmark {
         return result;
     }
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount)]
     [BenchmarkCategory("Read")]
     public int Buffer_ReadVarInt32() {
         _bufferRead.Position = 0;

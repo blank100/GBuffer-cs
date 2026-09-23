@@ -1,4 +1,4 @@
-﻿#define BLANK_BYTE_ARRAY_ENDIAN_BIG
+//#define BLANK_BYTE_ARRAY_ENDIAN_BIG
 //#define SAFETY_CHECK
 
 using System.Runtime.CompilerServices;

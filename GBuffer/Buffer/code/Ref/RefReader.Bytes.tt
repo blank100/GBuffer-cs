@@ -23,13 +23,15 @@ namespace Gal.Core {
 	ReadInt(className, false, nameof(Int32), sizeof(Int32));
 	ReadInt(className, false, nameof(UInt32), sizeof(UInt32));
 	ReadInt(className, false, nameof(Int64), sizeof(Int64));
-	ReadInt(className, true, nameof(UInt64), sizeof(UInt64));
+	ReadInt(className, false, nameof(UInt64), sizeof(UInt64));
 	ReadFloat(className);
 	ReadDouble(className);
 	ReadVarUInt32(className);
 	ReadVarInt32(className);
 	ReadVarUInt64(className);
 	ReadVarInt64(className);
+	ReadSleb128Int32(className);
+	ReadSleb128Int64(className);
 	ReadUtf8(className);
 #>
     }

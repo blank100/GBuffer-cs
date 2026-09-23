@@ -22,13 +22,15 @@ namespace Gal.Core {
     WriteInt(className, false, false, nameof(Int32), sizeof(Int32));
     WriteInt(className, false, false, nameof(UInt32), sizeof(UInt32));
     WriteInt(className, false, false, nameof(Int64), sizeof(Int64));
-    WriteInt(className, false, true, nameof(UInt64), sizeof(UInt64));
+    WriteInt(className, false, false, nameof(UInt64), sizeof(UInt64));
     WriteFloat(className, false);
     WriteDouble(className, false);
     WriteVarUInt32(className, false);
     WriteVarInt32(className, false);
     WriteVarUInt64(className, false);
     WriteVarInt64(className, false);
+    WriteSleb128Int32(className, false);
+    WriteSleb128Int64(className, false);
     WriteUtf8(className, false);
 #>
     }

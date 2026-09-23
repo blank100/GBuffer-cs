@@ -123,17 +123,6 @@ public class ReaderWriterBenchmark {
         return _buffer.Position;
     }
 
-    [Benchmark]
-    [BenchmarkCategory("WriteInt32")]
-    public long RefWriter_WriteInt32() {
-        var writer = new RefWriter<byte>(_writeBytes);
-
-        for (int i = 0; i < N; i++)
-            writer.WriteInt32(Int32Value);
-
-        return writer.Position;
-    }
-
     // ------------------
     // Read Int32
     // ------------------
@@ -223,17 +212,6 @@ public class ReaderWriterBenchmark {
         return _buffer.Position;
     }
 
-    [Benchmark]
-    [BenchmarkCategory("WriteInt64")]
-    public long RefWriter_WriteInt64() {
-        var writer = new RefWriter<byte>(_writeBytes);
-
-        for (int i = 0; i < N; i++)
-            writer.WriteInt64(Int64Value);
-
-        return writer.Position;
-    }
-
     // ------------------
     // Read Int64
     // ------------------
@@ -321,17 +299,6 @@ public class ReaderWriterBenchmark {
             _buffer.WriteDouble(DoubleValue);
 
         return _buffer.Position;
-    }
-
-    [Benchmark]
-    [BenchmarkCategory("WriteDouble")]
-    public long RefWriter_WriteDouble() {
-        var writer = new RefWriter<byte>(_writeBytes);
-
-        for (int i = 0; i < N; i++)
-            writer.WriteDouble(DoubleValue);
-
-        return writer.Position;
     }
 
     // ------------------

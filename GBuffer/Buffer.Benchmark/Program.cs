@@ -13,9 +13,8 @@ namespace Serialize.Benchmark {
 #else
             // BenchmarkRunner.Run(typeof(Program).Assembly);
 
-            if (args.Length > 0) BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-            else BenchmarkRunner.Run<ReaderWriterBenchmark>();
-            // BenchmarkRunner.Run<Int32Benchmark>();
+            // BenchmarkRunner.Run<ReaderWriterBenchmark>();
+            BenchmarkRunner.Run<Int32Benchmark>();
             // BenchmarkRunner.Run<Int16Benchmark>();
             // BenchmarkRunner.Run<Int64Benchmark>();
             // BenchmarkRunner.Run<DoubleBenchmark>();

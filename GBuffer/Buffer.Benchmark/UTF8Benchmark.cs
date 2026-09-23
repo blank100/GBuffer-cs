@@ -5,7 +5,7 @@ using Gal.Core;
 using SIE.IO;
 
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net80, warmupCount: 5, iterationCount: 10)]
+[SimpleJob(RuntimeMoniker.Net60, warmupCount: 5, iterationCount: 10)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
 public class UTF8Benchmark {
@@ -26,12 +26,13 @@ public class UTF8Benchmark {
         "        "              // 8. 纯空格：测试特定的字符处理
     };
 
-    // 对于 UTF8 字符串测试，10,000,000 次可能过大（单次迭代几秒钟）
-    // 建议设为 1,000,000 以获得合理的测试时间
-    private const int ITERATIONS = 2_000_000;
+    private const int ValueCount = 8;
+    private const int ITERATIONS = 10_000;
 
     [GlobalSetup]
     public void Setup() {
+        if (_testValues.Length != ValueCount) throw new InvalidOperationException("ValueCount does not match _testValues.");
+
         // 动态计算单组数据的最大可能字节数
         long bytesPerGroup = 0;
         foreach (var v in _testValues) {
@@ -42,12 +43,14 @@ public class UTF8Benchmark {
         // 预留 20% 的安全余量，防止因对齐等原因导致的细微偏差
         long totalSize = (long)(ITERATIONS * bytesPerGroup * 1.2);
 
-        // 如果 size 过大（超过 2GB），BenchmarkDotNet 可能会报错，需注意控制 ITERATIONS
-        _byteArrayRead = new ByteArray((int)Math.Min(totalSize, int.MaxValue - 56));
-        _byteArrayWrite = new ByteArray((int)Math.Min(totalSize, int.MaxValue - 56));
+        if (totalSize > int.MaxValue - 56) throw new InvalidOperationException("UTF8 benchmark buffer is too large.");
 
-        _bufferRead = new Buffer<byte>((int)Math.Min(totalSize, int.MaxValue - 56));
-        _bufferWrite = new Buffer<byte>((int)Math.Min(totalSize, int.MaxValue - 56));
+        var size = (int)totalSize;
+        _byteArrayRead = new ByteArray(size);
+        _byteArrayWrite = new ByteArray(size);
+
+        _bufferRead = new Buffer<byte>(size);
+        _bufferWrite = new Buffer<byte>(size);
 
         // 预填充读取数据
         for (var i = 0; i < ITERATIONS; i++) {
@@ -70,7 +73,7 @@ public class UTF8Benchmark {
     // Write 基准
     // ------------------
 
-    [Benchmark(Baseline = true), BenchmarkCategory("Write")]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount), BenchmarkCategory("Write")]
     public long ByteArray_WriteUTF8() {
         // 提取到局部变量减少字段访问开销
         var values = _testValues;
@@ -81,7 +84,7 @@ public class UTF8Benchmark {
         return writer.Position;
     }
 
-    [Benchmark, BenchmarkCategory("Write")]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount), BenchmarkCategory("Write")]
     public long Buffer_WriteUtf8() {
         var values = _testValues;
         var writer = _bufferWrite;
@@ -95,7 +98,7 @@ public class UTF8Benchmark {
     // Read 基准
     // ------------------
 
-    [Benchmark(Baseline = true), BenchmarkCategory("Read")]
+    [Benchmark(Baseline = true, OperationsPerInvoke = ITERATIONS * ValueCount), BenchmarkCategory("Read")]
     public int ByteArray_ReadUTF8() {
         var reader = _byteArrayRead;
         reader.Position = 0;
@@ -111,7 +114,7 @@ public class UTF8Benchmark {
         return result;
     }
 
-    [Benchmark, BenchmarkCategory("Read")]
+    [Benchmark(OperationsPerInvoke = ITERATIONS * ValueCount), BenchmarkCategory("Read")]
     public int Buffer_ReadUtf8() {
         var reader = _bufferRead;
         reader.Position = 0;

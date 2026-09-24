@@ -15,8 +15,6 @@ public class VarInt32Benchmark {
     private Buffer<byte> _bufferWrite;
     private Buffer<byte> _bufferVarIntRead;
     private Buffer<byte> _bufferVarIntWrite;
-    private Buffer<byte> _bufferSleb128Read;
-    private Buffer<byte> _bufferSleb128Write;
     private readonly uint[] _testValues = {
         0,
         1,
@@ -64,8 +62,6 @@ public class VarInt32Benchmark {
         var signedSize = ITERATIONS * SignedValueCount * maxBytesPerInt;
         _bufferVarIntRead = new Buffer<byte>(signedSize);
         _bufferVarIntWrite = new Buffer<byte>(signedSize);
-        _bufferSleb128Read = new Buffer<byte>(signedSize);
-        _bufferSleb128Write = new Buffer<byte>(signedSize);
 
         // 只为读取基准准备缓冲区
         for (var i = 0; i < ITERATIONS; i++) {
@@ -76,7 +72,6 @@ public class VarInt32Benchmark {
 
             foreach (var value in _signedTestValues) {
                 _bufferVarIntRead.WriteVarInt32(value);
-                _bufferSleb128Read.WriteSleb128Int32(value);
             }
         }
     }
@@ -89,8 +84,6 @@ public class VarInt32Benchmark {
         _bufferWrite.Position = 0;
         _bufferVarIntRead.Position = 0;
         _bufferVarIntWrite.Position = 0;
-        _bufferSleb128Read.Position = 0;
-        _bufferSleb128Write.Position = 0;
     }
 
     // ------------------
@@ -128,17 +121,6 @@ public class VarInt32Benchmark {
         }
 
         return _bufferVarIntWrite.Position;
-    }
-
-    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
-    [BenchmarkCategory("Write")]
-    public long Buffer_WriteSleb128Int32() {
-        var values = _signedTestValues;
-        for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in values) _bufferSleb128Write.WriteSleb128Int32(v);
-        }
-
-        return _bufferSleb128Write.Position;
     }
 
     // ------------------
@@ -190,18 +172,4 @@ public class VarInt32Benchmark {
         return result;
     }
 
-    [Benchmark(OperationsPerInvoke = ITERATIONS * SignedValueCount)]
-    [BenchmarkCategory("Read")]
-    public int Buffer_ReadSleb128Int32() {
-        _bufferSleb128Read.Position = 0;
-        var result = 0;
-
-        for (var i = 0; i < ITERATIONS; i++) {
-            foreach (var v in _signedTestValues) {
-                result ^= _bufferSleb128Read.ReadSleb128Int32();
-            }
-        }
-
-        return result;
-    }
 }

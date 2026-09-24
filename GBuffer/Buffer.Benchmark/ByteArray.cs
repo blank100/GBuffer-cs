@@ -374,21 +374,23 @@ namespace SIE.IO
         /// <returns></returns>
         public ByteArray WriteULEB128(int value) {
             uint r_value = (uint)value;
-            if (r_value <= 127) {
-                if (_pos >= _capacity) {
-                    Grow(1);
-                }
-            } else if (r_value <= 0x3fff) {
-                if (_pos + 2 > _capacity) {
-                    Grow(2);
-                }
-            } else if (r_value <= 0x1fffff) {
-                if (_pos + 3 > _capacity) {
-                    Grow(3);
-                }
-            } else {
-                if (_pos + 5 > _capacity) {
-                    Grow(5);
+            if (_capacity - _pos < 5) {
+                if (r_value <= 127) {
+                    if (_pos >= _capacity) {
+                        Grow(1);
+                    }
+                } else if (r_value <= 0x3fff) {
+                    if (_pos + 2 > _capacity) {
+                        Grow(2);
+                    }
+                } else if (r_value <= 0x1fffff) {
+                    if (_pos + 3 > _capacity) {
+                        Grow(3);
+                    }
+                } else {
+                    if (_pos + 5 > _capacity) {
+                        Grow(5);
+                    }
                 }
             }
 

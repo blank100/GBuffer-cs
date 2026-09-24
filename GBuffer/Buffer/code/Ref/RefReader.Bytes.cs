@@ -73,16 +73,16 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ReadFloat(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadFloat(self.Span);
+        public static float ReadFloat(this ref RefReader<byte> self, bool bigEndian = false) {
+            var t = SpanByteUtils.ReadFloat(self.Span, bigEndian);
             self.Advance(sizeof(float));
             return t;
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ReadDouble(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadDouble(self.Span);
+        public static double ReadDouble(this ref RefReader<byte> self, bool bigEndian = false) {
+            var t = SpanByteUtils.ReadDouble(self.Span, bigEndian);
             self.Advance(sizeof(double));
             return t;
         }
@@ -121,22 +121,6 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadSleb128Int32(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadSleb128Int32(self.Span, out var count);
-            self.Advance(count);
-            return t;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ReadSleb128Int64(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadSleb128Int64(self.Span, out var count);
-            self.Advance(count);
-            return t;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ReadUtf8(this ref RefReader<byte> self, int len) {
             var t = SpanByteUtils.ReadUtf8(self.Span, len);
             self.Advance(len);
@@ -144,8 +128,8 @@ namespace Gal.Core {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ReadUtf8(this ref RefReader<byte> self) {
-            var t = SpanByteUtils.ReadUtf8(self.Span, out var count);
+        public static string ReadUtf8(this ref RefReader<byte> self, bool bigEndian = false) {
+            var t = SpanByteUtils.ReadUtf8(self.Span, out var count, bigEndian);
             self.Advance(count);
             return t;
         }

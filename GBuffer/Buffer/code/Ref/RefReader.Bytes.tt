@@ -30,8 +30,6 @@ namespace Gal.Core {
 	ReadVarInt32(className);
 	ReadVarUInt64(className);
 	ReadVarInt64(className);
-	ReadSleb128Int32(className);
-	ReadSleb128Int64(className);
 	ReadUtf8(className);
 #>
     }

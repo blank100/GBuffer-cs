@@ -51,76 +51,75 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		public void Sleb128Int32MatchesReferenceEncoding() {
-			AssertSleb128Int32Encoding(0, 0x00);
-			AssertSleb128Int32Encoding(1, 0x01);
-			AssertSleb128Int32Encoding(-1, 0x7F);
-			AssertSleb128Int32Encoding(63, 0x3F);
-			AssertSleb128Int32Encoding(64, 0xC0, 0x00);
-			AssertSleb128Int32Encoding(-64, 0x40);
-			AssertSleb128Int32Encoding(-65, 0xBF, 0x7F);
-			AssertSleb128Int32Encoding(127, 0xFF, 0x00);
-			AssertSleb128Int32Encoding(128, 0x80, 0x01);
-			AssertSleb128Int32Encoding(-128, 0x80, 0x7F);
-			AssertSleb128Int32Encoding(int.MaxValue, 0xFF, 0xFF, 0xFF, 0xFF, 0x07);
-			AssertSleb128Int32Encoding(int.MinValue, 0x80, 0x80, 0x80, 0x80, 0x78);
-		}
+		public void VarIntSizeMatchesWrittenLength() {
+			var uintValues = new uint[] { 0, 127, 128, 16383, 16384, uint.MaxValue };
+			var intValues = new int[] { int.MinValue, -1, 0, 1, int.MaxValue };
+			var ulongValues = new ulong[] { 0, 127, 128, 16383, 16384, ulong.MaxValue };
+			var longValues = new long[] { long.MinValue, -1, 0, 1, long.MaxValue };
 
-		[Fact]
-		public void Sleb128Int64MatchesReferenceEncoding() {
-			AssertSleb128Int64Encoding(0, 0x00);
-			AssertSleb128Int64Encoding(1, 0x01);
-			AssertSleb128Int64Encoding(-1, 0x7F);
-			AssertSleb128Int64Encoding(63, 0x3F);
-			AssertSleb128Int64Encoding(64, 0xC0, 0x00);
-			AssertSleb128Int64Encoding(-64, 0x40);
-			AssertSleb128Int64Encoding(-65, 0xBF, 0x7F);
-			AssertSleb128Int64Encoding(127, 0xFF, 0x00);
-			AssertSleb128Int64Encoding(128, 0x80, 0x01);
-			AssertSleb128Int64Encoding(-128, 0x80, 0x7F);
-			AssertSleb128Int64Encoding(long.MaxValue, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00);
-			AssertSleb128Int64Encoding(long.MinValue, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7F);
-		}
-
-		[Fact]
-		public void Sleb128ReaderAdvancesExactly() {
-			var reader = new Reader<byte>(new byte[] { 0x80, 0x01, 0x7F });
-
-			Assert.Equal(128, reader.ReadSleb128Int32());
-			Assert.Equal(2, reader.Position);
-			Assert.Equal(-1, reader.ReadSleb128Int32());
-			Assert.Equal(3, reader.Position);
-		}
-
-		[Fact]
-		public void Sleb128RejectsMalformedSequences() {
-			var int32Unterminated = new Reader<byte>(new byte[] { 0x80, 0x80, 0x80, 0x80, 0x80 });
-			var int32Overflow = new Reader<byte>(new byte[] { 0x80, 0x80, 0x80, 0x80, 0x08 });
-			var int64Unterminated = new Reader<byte>(new byte[] { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 });
-			var int64InvalidTenthByte = new Reader<byte>(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02 });
-
-			Assert.Throws<FormatException>(() => int32Unterminated.ReadSleb128Int32());
-			Assert.Throws<FormatException>(() => int32Overflow.ReadSleb128Int32());
-			Assert.Throws<FormatException>(() => int64Unterminated.ReadSleb128Int64());
-			Assert.Throws<FormatException>(() => int64InvalidTenthByte.ReadSleb128Int64());
-		}
-
-		private static void AssertSleb128Int32Encoding(int value, params byte[] expected) {
-			Span<byte> bytes = stackalloc byte[5];
-			var written = SpanByteUtils.WriteSleb128Int32(bytes, value);
-
-			Assert.Equal(expected, bytes[..written].ToArray());
-			Assert.Equal(value, SpanByteUtils.ReadSleb128Int32(bytes, out var read));
-			Assert.Equal(written, read);
-		}
-
-		private static void AssertSleb128Int64Encoding(long value, params byte[] expected) {
 			Span<byte> bytes = stackalloc byte[10];
-			var written = SpanByteUtils.WriteSleb128Int64(bytes, value);
-
-			Assert.Equal(expected, bytes[..written].ToArray());
-			Assert.Equal(value, SpanByteUtils.ReadSleb128Int64(bytes, out var read));
-			Assert.Equal(written, read);
+			foreach (var value in uintValues)
+				Assert.Equal(SpanByteUtils.GetVarUInt32Size(value), SpanByteUtils.WriteVarUInt32(bytes, value));
+			foreach (var value in intValues)
+				Assert.Equal(SpanByteUtils.GetVarInt32Size(value), SpanByteUtils.WriteVarInt32(bytes, value));
+			foreach (var value in ulongValues)
+				Assert.Equal(SpanByteUtils.GetVarUInt64Size(value), SpanByteUtils.WriteVarUInt64(bytes, value));
+			foreach (var value in longValues)
+				Assert.Equal(SpanByteUtils.GetVarInt64Size(value), SpanByteUtils.WriteVarInt64(bytes, value));
 		}
+
+		[Fact]
+		public void VarIntWriteAcceptsExactSpan() {
+			var uintValues = new uint[] { 0, 127, 128, 16383, 16384, uint.MaxValue };
+			var intValues = new int[] { int.MinValue, -1, 0, 1, int.MaxValue };
+			var ulongValues = new ulong[] { 0, 127, 128, 16383, 16384, ulong.MaxValue };
+			var longValues = new long[] { long.MinValue, -1, 0, 1, long.MaxValue };
+			Span<byte> bytes = stackalloc byte[10];
+
+			foreach (var value in uintValues) {
+				var target = bytes[..SpanByteUtils.GetVarUInt32Size(value)];
+				var written = SpanByteUtils.WriteVarUInt32(target, value);
+				Assert.Equal(value, SpanByteUtils.ReadVarUInt32(target, out var read));
+				Assert.Equal(written, read);
+			}
+
+			foreach (var value in intValues) {
+				var target = bytes[..SpanByteUtils.GetVarInt32Size(value)];
+				var written = SpanByteUtils.WriteVarInt32(target, value);
+				Assert.Equal(value, SpanByteUtils.ReadVarInt32(target, out var read));
+				Assert.Equal(written, read);
+			}
+
+			foreach (var value in ulongValues) {
+				var target = bytes[..SpanByteUtils.GetVarUInt64Size(value)];
+				var written = SpanByteUtils.WriteVarUInt64(target, value);
+				Assert.Equal(value, SpanByteUtils.ReadVarUInt64(target, out var read));
+				Assert.Equal(written, read);
+			}
+
+			foreach (var value in longValues) {
+				var target = bytes[..SpanByteUtils.GetVarInt64Size(value)];
+				var written = SpanByteUtils.WriteVarInt64(target, value);
+				Assert.Equal(value, SpanByteUtils.ReadVarInt64(target, out var read));
+				Assert.Equal(written, read);
+			}
+		}
+
+		[Fact]
+		public void RefWriterVarIntGrowsWhenNeeded() {
+			Span<byte> initial = stackalloc byte[1];
+			var writer = new RefWriter<byte>(initial);
+
+			writer.WriteVarUInt32(uint.MaxValue);
+			writer.WriteVarInt64(long.MinValue);
+
+			var bytes = writer.WrittenSpan.ToArray();
+			writer.Dispose();
+
+			var reader = new Reader<byte>(bytes);
+			Assert.Equal(uint.MaxValue, reader.ReadVarUInt32());
+			Assert.Equal(long.MinValue, reader.ReadVarInt64());
+		}
+
 	}
 }

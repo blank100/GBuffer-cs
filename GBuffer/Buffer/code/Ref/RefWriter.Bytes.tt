@@ -29,8 +29,6 @@ namespace Gal.Core {
     WriteVarInt32(className, false);
     WriteVarUInt64(className, false);
     WriteVarInt64(className, false);
-    WriteSleb128Int32(className, false);
-    WriteSleb128Int64(className, false);
     WriteUtf8(className, false);
 #>
     }

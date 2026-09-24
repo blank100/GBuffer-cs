@@ -165,8 +165,8 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float <#= nameof(ReadFloat) #>(this <#= className #> self) {
-            var t = SpanByteUtils.<#= nameof(ReadFloat) #>(self.Span);
+        public static float <#= nameof(ReadFloat) #>(this <#= className #> self, bool bigEndian = false) {
+            var t = SpanByteUtils.<#= nameof(ReadFloat) #>(self.Span, bigEndian);
             self.Advance(sizeof(float));
             return t;
         }
@@ -177,8 +177,8 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteFloat) #>(this <#= className #> self, float value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteFloat) #>(self.GetSpan(sizeof(float)), value));
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteFloat) #>(this <#= className #> self, float value, bool bigEndian = false) {
+            self.Advance(SpanByteUtils.<#= nameof(WriteFloat) #>(self.GetSpan(sizeof(float)), value, bigEndian));
 <#
         if (returnSelf) {
 #>
@@ -194,8 +194,8 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double <#= nameof(ReadDouble) #>(this <#= className #> self) {
-            var t = SpanByteUtils.<#= nameof(ReadDouble) #>(self.Span);
+        public static double <#= nameof(ReadDouble) #>(this <#= className #> self, bool bigEndian = false) {
+            var t = SpanByteUtils.<#= nameof(ReadDouble) #>(self.Span, bigEndian);
             self.Advance(sizeof(double));
             return t;
         }
@@ -206,8 +206,8 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteDouble) #>(this <#= className #> self, double value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteDouble) #>(self.GetSpan(sizeof(double)), value));
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteDouble) #>(this <#= className #> self, double value, bool bigEndian = false) {
+            self.Advance(SpanByteUtils.<#= nameof(WriteDouble) #>(self.GetSpan(sizeof(double)), value, bigEndian));
 <#
         if (returnSelf) {
 #>
@@ -248,7 +248,12 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarUInt32) #>(this <#= className #> self, uint value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt32) #>(self.GetSpan(5), value));
+            if (self.WritableCount >= 5) {
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt32) #>(self.Span, value));
+            } else {
+                var size = SpanByteUtils.GetVarUInt32Size(value);
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt32) #>(self.GetSpan(size), value));
+            }
 <#
         if (returnSelf) {
 #>
@@ -265,7 +270,12 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt32) #>(this <#= className #> self, int value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteVarInt32) #>(self.GetSpan(5), value));
+            if (self.WritableCount >= 5) {
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarInt32) #>(self.Span, value));
+            } else {
+                var size = SpanByteUtils.GetVarInt32Size(value);
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarInt32) #>(self.GetSpan(size), value));
+            }
 <#
         if (returnSelf) {
 #>
@@ -306,7 +316,12 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarUInt64) #>(this <#= className #> self, ulong value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt64) #>(self.GetSpan(10), value));
+            if (self.WritableCount >= 10) {
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt64) #>(self.Span, value));
+            } else {
+                var size = SpanByteUtils.GetVarUInt64Size(value);
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarUInt64) #>(self.GetSpan(size), value));
+            }
 <#
         if (returnSelf) {
 #>
@@ -323,65 +338,12 @@
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static <#= returnSelf ? className : "void" #> <#= nameof(WriteVarInt64) #>(this <#= className #> self, long value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteVarInt64) #>(self.GetSpan(10), value));
-<#
-        if (returnSelf) {
-#>
-            return self;
-<#
-        }
-#>
-        }
-<#
-    }
-#><#
-    void ReadSleb128Int32(string className) {
-#>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int <#= nameof(ReadSleb128Int32) #>(this <#= className #> self) {
-            var t = SpanByteUtils.<#= nameof(ReadSleb128Int32) #>(self.Span, out var count);
-            self.Advance(count);
-            return t;
-        }
-<#
-    }
-#><#
-    void ReadSleb128Int64(string className) {
-#>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long <#= nameof(ReadSleb128Int64) #>(this <#= className #> self) {
-            var t = SpanByteUtils.<#= nameof(ReadSleb128Int64) #>(self.Span, out var count);
-            self.Advance(count);
-            return t;
-        }
-<#
-    }
-#><#
-    void WriteSleb128Int32(string className, bool returnSelf) {
-#>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteSleb128Int32) #>(this <#= className #> self, int value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteSleb128Int32) #>(self.GetSpan(5), value));
-<#
-        if (returnSelf) {
-#>
-            return self;
-<#
-        }
-#>
-        }
-<#
-    }
-#><#
-    void WriteSleb128Int64(string className, bool returnSelf) {
-#>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteSleb128Int64) #>(this <#= className #> self, long value) {
-            self.Advance(SpanByteUtils.<#= nameof(WriteSleb128Int64) #>(self.GetSpan(10), value));
+            if (self.WritableCount >= 10) {
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarInt64) #>(self.Span, value));
+            } else {
+                var size = SpanByteUtils.GetVarInt64Size(value);
+                self.Advance(SpanByteUtils.<#= nameof(WriteVarInt64) #>(self.GetSpan(size), value));
+            }
 <#
         if (returnSelf) {
 #>
@@ -404,8 +366,8 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string <#= nameof(ReadUtf8) #>(this <#= className #> self) {
-            var t = SpanByteUtils.<#= nameof(ReadUtf8) #>(self.Span, out var count);
+        public static string <#= nameof(ReadUtf8) #>(this <#= className #> self, bool bigEndian = false) {
+            var t = SpanByteUtils.<#= nameof(ReadUtf8) #>(self.Span, out var count, bigEndian);
             self.Advance(count);
             return t;
         }
@@ -416,19 +378,19 @@
 #>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value) {
+        public static <#= returnSelf ? className : "void" #> <#= nameof(WriteUtf8) #>(this <#= className #> self, string value, bool bigEndian = false) {
             if (string.IsNullOrEmpty(value)) {
-                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.GetSpan(sizeof(ushort)), value));
+                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.GetSpan(sizeof(ushort)), value, bigEndian));
                 return <#= returnSelf ? "self" : "" #>;
             }
 
             var maxLength = value.Length * 3;
             if (self.WritableCount >= maxLength + sizeof(ushort)) {
-                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.Span, value));
+                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.Span, value, bigEndian));
             } else {
                 var count = System.Text.Encoding.UTF8.GetByteCount(value);
                 if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
-                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.GetSpan(count + sizeof(ushort)), value));
+                self.Advance(SpanByteUtils.<#= nameof(WriteUtf8) #>(self.GetSpan(count + sizeof(ushort)), value, bigEndian));
             }
 <#
         if (returnSelf) {

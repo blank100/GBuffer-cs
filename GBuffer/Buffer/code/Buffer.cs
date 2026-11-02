@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 
 namespace Gal.Core
 {
@@ -17,24 +17,6 @@ namespace Gal.Core
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set => Buffer[index] = value;
 		}
-
-		// 以下 new 方法隐藏基类方法，直接提供具体类型 Buffer<T> 上的调用
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(T element) { base.Write(element); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(T element1, T element2) { base.Write(element1, element2); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(T element1, T element2, T element3) { base.Write(element1, element2, element3); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(ReadOnlySpan<T> elements) { base.Write(elements); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(ReadOnlyMemory<T> elements) { base.Write(elements); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Write(ReadOnlySequence<T> elements) { base.Write(elements); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Clear() { base.Clear(); }
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new void Discard() { base.Discard(); }
 
 		public int ReadableCount {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]

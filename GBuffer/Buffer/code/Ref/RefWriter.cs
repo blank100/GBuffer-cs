@@ -61,7 +61,7 @@ namespace Gal.Core
         }
 
 		/// <summary>
-		/// 长度减去当前位置
+		/// 已写入长度减去当前位置（可读剩余）
 		/// </summary>
 		public int Remaining {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,16 +137,12 @@ namespace Gal.Core
 		/// <param name="element"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(T element) {
-			var t = _span;
 			var p = _position;
+			HintSize(1);
+
+			_span[p] = element;
+
 			var n = p + 1;
-			if ((uint)n > (uint)t.Length) {
-				GrowBuffer(1);
-				t = _span;
-			}
-
-			t[p] = element;
-
 			_position = n;
 			if (_length < n) _length = n;
 		}
@@ -192,7 +188,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// 在当前位置写入四个元素,并将 position 向后移动4位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -215,7 +211,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// 在当前位置写入五个元素,并将 position 向后移动5位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -240,7 +236,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动3位
+		/// 在当前位置写入六个元素,并将 position 向后移动6位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -398,15 +394,5 @@ namespace Gal.Core
 			if (buffer != null) ArrayPool<T>.Shared.Return(buffer, !typeof(T).IsValueType);
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal bool InternalEnsureCapacity(ref int capacity, int need, ref int written, int remaining, ref Span<T> span) {
-			if (capacity - written >= need) return false;
-			Advance(written);
-			written = 0;
-			HintSize(Math.Max((int)(remaining * 1.1f), remaining + need));
-			span = this.Span;
-			capacity = span.Length;
-			return true;
-		}
 	}
 }

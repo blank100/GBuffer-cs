@@ -1,7 +1,5 @@
-using System.Buffers.Binary;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.InteropServices;
-using Gal.Core;
 
 namespace Gal.Core;
 

@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-
-namespace Gal.Core
+﻿namespace Gal.Core
 {
     /// <summary>
     ///

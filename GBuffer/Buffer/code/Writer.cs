@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.InteropServices;
 
 namespace Gal.Core
@@ -107,15 +107,13 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(T element) {
 			var p = _position;
-			var n = p + 1;
-
-			if ((uint)n > (uint)Buffer.Length) GrowBuffer(1);
+			HintSize(1);
 
 			Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p) = element;
 
+			var n = p + 1;
 			_position = n;
 			if (n > _length) _length = n;
-
 		}
 
 		/// <summary>
@@ -161,7 +159,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动4位
+		/// 在当前位置写入四个元素,并将 position 向后移动4位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -185,7 +183,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动5位
+		/// 在当前位置写入五个元素,并将 position 向后移动5位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -211,7 +209,7 @@ namespace Gal.Core
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动6位
+		/// 在当前位置写入六个元素,并将 position 向后移动6位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>

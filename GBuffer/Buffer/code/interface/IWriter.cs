@@ -1,13 +1,12 @@
-﻿using System.Buffers;
+using System.Buffers;
 
 namespace Gal.Core
 {
     /// <summary>
-    /// Writer 接口（CRTP 自引用泛型）：Write 系列方法返回具体实现类型 TSelf，支持强类型链式调用。
+    /// Writer 接口：所有写入/清理方法均为 void，不支持链式调用。
     /// </summary>
-    /// <typeparam name="TSelf">实现本接口的具体类型</typeparam>
     /// <typeparam name="T">元素类型</typeparam>
-    public interface IWriter<TSelf, T> : IDisposable where TSelf : IWriter<TSelf, T>
+    public interface IWriter<T> : IDisposable
     {
         int Capacity { get; }
         int Length { get; set; }
@@ -44,13 +43,13 @@ namespace Gal.Core
 
         T this[int index] { set; }
 
-        TSelf Write(T element);
-        TSelf Write(T element1, T element2);
-        TSelf Write(T element1, T element2, T element3);
+        void Write(T element);
+        void Write(T element1, T element2);
+        void Write(T element1, T element2, T element3);
 
-        TSelf Write(ReadOnlySpan<T> elements);
-        TSelf Write(ReadOnlyMemory<T> elements);
-        TSelf Write(ReadOnlySequence<T> elements);
+        void Write(ReadOnlySpan<T> elements);
+        void Write(ReadOnlyMemory<T> elements);
+        void Write(ReadOnlySequence<T> elements);
 
         /// <summary>
         /// 获取当前位置到 buffer 结束的 Span&lt;T&gt;,如果长度不足 sizeHint ,则扩充 buffer 长度
@@ -79,12 +78,11 @@ namespace Gal.Core
         /// <param name="count"></param>
         void Advance(int count);
 
-        TSelf Clear();
+        void Clear();
 
         /// <summary>
         /// 丢弃当前位置之前的所有数据
         /// </summary>
-        /// <returns></returns>
-        TSelf Discard();
+        void Discard();
     }
 }

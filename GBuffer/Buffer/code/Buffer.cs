@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 
 namespace Gal.Core
 {
@@ -6,7 +6,7 @@ namespace Gal.Core
     ///
     /// </summary>
     /// <author>gouanlin</author>
-    public sealed class Buffer<T> : Writer<T>, IBuffer<T>, IWriter<Buffer<T>, T>
+    public sealed class Buffer<T> : Writer<T>, IBuffer<T>
 	{
 		public Buffer(int capacity = DEFAULT_CAPACITY) : base(capacity) { }
 
@@ -18,32 +18,23 @@ namespace Gal.Core
 			set => Buffer[index] = value;
 		}
 
-		// CRTP 强类型链式：以下 new 方法隐藏基类的 IWriter<T> 返回，返回具体类型 Buffer<T>
+		// 以下 new 方法隐藏基类方法，直接提供具体类型 Buffer<T> 上的调用
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(T element) { base.Write(element); return this; }
+		public new void Write(T element) { base.Write(element); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(T element1, T element2) { base.Write(element1, element2); return this; }
+		public new void Write(T element1, T element2) { base.Write(element1, element2); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(T element1, T element2, T element3) { base.Write(element1, element2, element3); return this; }
+		public new void Write(T element1, T element2, T element3) { base.Write(element1, element2, element3); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(ReadOnlySpan<T> elements) { base.Write(elements); return this; }
+		public new void Write(ReadOnlySpan<T> elements) { base.Write(elements); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(ReadOnlyMemory<T> elements) { base.Write(elements); return this; }
+		public new void Write(ReadOnlyMemory<T> elements) { base.Write(elements); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Write(ReadOnlySequence<T> elements) { base.Write(elements); return this; }
+		public new void Write(ReadOnlySequence<T> elements) { base.Write(elements); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Clear() { base.Clear(); return this; }
+		public new void Clear() { base.Clear(); }
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public new Buffer<T> Discard() { base.Discard(); return this; }
-		// IBuffer<T> 继承 IWriter<IBuffer<T>, T>，此处显式转发到具体方法（返回 Buffer<T> 隐式转 IBuffer<T>）
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(T element) => Write(element);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(T element1, T element2) => Write(element1, element2);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(T element1, T element2, T element3) => Write(element1, element2, element3);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(ReadOnlySpan<T> elements) => Write(elements);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(ReadOnlyMemory<T> elements) => Write(elements);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Write(ReadOnlySequence<T> elements) => Write(elements);
-		IBuffer<T> IWriter<IBuffer<T>, T>.Clear() => Clear();
-		IBuffer<T> IWriter<IBuffer<T>, T>.Discard() => Discard();
+		public new void Discard() { base.Discard(); }
 
 		public int ReadableCount {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]

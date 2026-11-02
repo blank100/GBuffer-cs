@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.IO;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -6,6 +8,7 @@ namespace Gal.Core {
     public static partial class SpanByteUtils {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ReadUInt16(ReadOnlySpan<byte> span, bool bigEndian = false) {
+            if (span.Length < sizeof(ushort)) throw new EndOfStreamException($"Need {sizeof(ushort)} bytes, but only {span.Length} remaining.");
             var value = Unsafe.ReadUnaligned<ushort>(ref MemoryMarshal.GetReference(span));
             return bigEndian == BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
         }
@@ -15,6 +18,7 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadUInt32(ReadOnlySpan<byte> span, bool bigEndian = false) {
+            if ((uint)span.Length < sizeof(uint)) throw new EndOfStreamException($"Need {sizeof(uint)} bytes, but only {span.Length} remaining.");
             var value = Unsafe.ReadUnaligned<uint>(ref MemoryMarshal.GetReference(span));
             return bigEndian == BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
         }
@@ -24,6 +28,7 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ReadUInt64(ReadOnlySpan<byte> span, bool bigEndian = false) {
+            if (span.Length < sizeof(ulong)) throw new EndOfStreamException($"Need {sizeof(ulong)} bytes, but only {span.Length} remaining.");
             var value = Unsafe.ReadUnaligned<ulong>(ref MemoryMarshal.GetReference(span));
             return bigEndian == BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
         }
@@ -103,15 +108,6 @@ namespace Gal.Core {
             WriteUInt16(span, (ushort)count, bigEndian);
             return sizeof(ushort) + count;
         }
-
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        // public static bool IsAscii(ReadOnlySpan<byte> span) {
-        //     foreach (var b in span) {
-        //         if (b > 127) return false;
-        //     }
-        //
-        //     return true;
-        // }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAscii(ReadOnlySpan<byte> span) {

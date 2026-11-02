@@ -18,7 +18,7 @@
             get => _position;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
-                Debug.Assert(0 <= value && value <= _span.Length, $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
+                if ((uint)value > (uint)_span.Length) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
                 _position = value;
             }
         }

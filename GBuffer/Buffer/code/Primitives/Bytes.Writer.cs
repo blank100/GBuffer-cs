@@ -96,16 +96,16 @@
 			//@formatter:off
             if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            *bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
             if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            *bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
             if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-            *bytes++ = (byte)(value | 0x80); value >>= 7;
+            *bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
             if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
             *bytes++ = (byte)(value);
             //@formatter:on
         }
@@ -118,31 +118,31 @@
 			//@formatter:off
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80); value >>= 7;
+			*bytes++ = (byte)((value & 0x7F) | 0x80); value >>= 7;
 			if (value < 0x80) { *bytes++ = (byte)value; return; }
 
-			*bytes++ = (byte)(value | 0x80);
+			*bytes++ = (byte)((value & 0x7F) | 0x80);
 			*bytes++ = (byte)(value >> 7);
             //@formatter:on
         }
@@ -165,7 +165,9 @@
                 return;
             }
 
-            ushort bytesCount = (ushort)System.Text.Encoding.UTF8.GetByteCount(value);
+            var byteCount = System.Text.Encoding.UTF8.GetByteCount(value);
+            if (byteCount > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value), "UTF-8 byte count exceeds the Int16 length prefix limit (32767).");
+            ushort bytesCount = (ushort)byteCount;
             WriteUInt16(ref bytes, bytesCount);
             fixed (char* source = value) System.Text.Encoding.UTF8.GetBytes(source, value.Length, bytes, bytesCount);
             bytes += bytesCount;

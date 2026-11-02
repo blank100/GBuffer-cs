@@ -11,16 +11,11 @@ namespace Serialize.Benchmark {
 #if DEBUG
 			DebugRunner.Run();
 #else
-            // BenchmarkRunner.Run(typeof(Program).Assembly);
-
-            // BenchmarkRunner.Run<ReaderWriterBenchmark>();
-            // BenchmarkRunner.Run<Int32Benchmark>();
-            // BenchmarkRunner.Run<Int16Benchmark>();
-            // BenchmarkRunner.Run<Int64Benchmark>();
-            // BenchmarkRunner.Run<DoubleBenchmark>();
-            BenchmarkRunner.Run<VarInt32Benchmark>();
-            // BenchmarkRunner.Run<VarInt64Benchmark>();
-            // BenchmarkRunner.Run<UTF8Benchmark>();
+            // 支持命令行过滤，例如:
+            //   dotnet Buffer.Benchmark.dll --filter *VarInt32*
+            //   dotnet Buffer.Benchmark.dll --filter *Float* --job dry
+            // 不带参数时跑全部 benchmark
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 #endif
         }
 	}

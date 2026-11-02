@@ -5,7 +5,7 @@ using Xunit;
 namespace Serialize.Test {
 	public class BytesReaderWriterTest {
 		[Fact]
-		private unsafe void RandomInt16Test() {
+		public unsafe void RandomInt16Test() {
 			{
 				var bytes = new byte[4];
 				fixed (byte* bytePtr = bytes) {
@@ -26,7 +26,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void Int8Test() {
+		public unsafe void Int8Test() {
 			var bytes = new byte[4];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -45,7 +45,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void Int16Test() {
+		public unsafe void Int16Test() {
 			var bytes = new byte[8];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -64,7 +64,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void Int32Test() {
+		public unsafe void Int32Test() {
 			var bytes = new byte[16];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -83,7 +83,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void Int64Test() {
+		public unsafe void Int64Test() {
 			var bytes = new byte[32];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -102,7 +102,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void FloatTest() {
+		public unsafe void FloatTest() {
 			var bytes = new byte[24];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -125,7 +125,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void DoubleTest() {
+		public unsafe void DoubleTest() {
 			var bytes = new byte[48];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -148,7 +148,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void StringTest() {
+		public unsafe void StringTest() {
 			var bytes = new byte[1024];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -171,7 +171,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void SyntheticTest() {
+		public unsafe void SyntheticTest() {
 			var bytes = new byte[1024];
 			fixed (byte* bytePtr = bytes) {
 				var ptr1 = bytePtr;
@@ -196,7 +196,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void VarUInt32Test() {
+		public unsafe void VarUInt32Test() {
 			var pcg = Random.Shared;
 
 			var bytes = new byte[1024];
@@ -212,7 +212,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void VarInt32Test() {
+		public unsafe void VarInt32Test() {
 			var pcg = Random.Shared;
 
 			var bytes = new byte[1024];
@@ -228,7 +228,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void VarUInt64Test() {
+		public unsafe void VarUInt64Test() {
 			var pcg = Random.Shared;
 
 			var bytes = new byte[1024];
@@ -249,7 +249,7 @@ namespace Serialize.Test {
 		}
 
 		[Fact]
-		private unsafe void VarInt64Test() {
+		public unsafe void VarInt64Test() {
 			var pcg = Random.Shared;
 
 			var bytes = new byte[1024];

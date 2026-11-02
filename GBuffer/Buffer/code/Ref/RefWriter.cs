@@ -22,7 +22,7 @@ namespace Gal.Core
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _length;
 			set {
-				Debug.Assert(value >= 0, $"{nameof(Length)} cannot be less than 0");
+				if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Length)} cannot be less than 0");
 
 				_length = value;
 				if (value > _span.Length) GrowBuffer(value - _span.Length);
@@ -38,7 +38,7 @@ namespace Gal.Core
 			get => _position;
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set {
-				Debug.Assert(0 <= value && value <= _span.Length, $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
+				if ((uint)value > (uint)_span.Length) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Capacity)}");
 
 				_position = value;
 			}
@@ -140,7 +140,7 @@ namespace Gal.Core
 			var t = _span;
 			var p = _position;
 			var n = p + 1;
-			if (n > t.Length) {
+			if ((uint)n > (uint)t.Length) {
 				GrowBuffer(1);
 				t = _span;
 			}
@@ -322,7 +322,7 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void GenerateBuffer(int size) {
 			var buffer = ArrayPool<T>.Shared.Rent(size);
-			_span.Slice(0, Math.Min(_length, _span.Length)).CopyTo(buffer);
+			_span.Slice(0, _length).CopyTo(buffer); // _length <= _span.Length 恒成立
 			if (_buffer != null) ArrayPool<T>.Shared.Return(_buffer, !typeof(T).IsValueType);
 			_span = _buffer = buffer;
 		}
@@ -373,7 +373,7 @@ namespace Gal.Core
 				return _buffer.AsMemory(_position);
 			}
 			var availableSize = _span.Length - _position;
-			if (availableSize < sizeHint) GrowBuffer(sizeHint - availableSize);
+			if ((uint)availableSize < (uint)sizeHint) GrowBuffer(sizeHint - availableSize);
 			else if (_buffer == null) GenerateBuffer(_span.Length);
 			return _buffer.AsMemory(_position);
 		}
@@ -387,7 +387,7 @@ namespace Gal.Core
 			Debug.Assert(sizeHint > 0, $"The parameter of {nameof(sizeHint)} must be greater than 0");
 
 			var availableSize = _span.Length - _position;
-			if (availableSize >= sizeHint) return;
+			if ((uint)availableSize >= (uint)sizeHint) return;
 			GrowBuffer(sizeHint - availableSize);
 		}
 

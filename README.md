@@ -47,3 +47,16 @@ writer.WriteVarInt32(-100);
 
 // 写入字符串
 writer.WriteUtf8("Hello World");
+```
+
+## 协议格式与限制
+
+- 固定长度类型按小端序写入（`bigEndian: true` 可切换大端序）；VarInt 为 Base128 变长编码，带符号整数先经 ZigZag 编码
+- 字符串格式：`[UInt16 长度前缀] + [UTF-8 字节流]`，UTF-8 字节数上限为 **32767**（超过抛出 `ArgumentOutOfRangeException`）
+- 读取时若剩余字节不足（定长类型）或 VarInt 序列非法/截断，抛出 `System.IO.EndOfStreamException` / `FormatException`，不会越界读取
+- 目标框架：`netstandard2.1;net8.0`（测试与 Benchmark 为 `net8.0`）
+
+## 视图语义说明（Buffer<T>）
+
+`Buffer<T>`（以及 `Writer<T>`）的 `Span` / `Memory` 表示 **当前 Position 到 Capacity 结尾的可写区域（包含未写入部分）**；已写入区域请用 `WrittenSpan` / `WrittenMemory`，剩余可读字节数请用 `ReadableCount`。
+> 命名建议：为避免 `Span` 被误认为"可读数据"，未来可新增 `ReadableSpan` / `ReadableMemory`（Position..Length 的只读视图）作为显式命名，现有属性保持不变。

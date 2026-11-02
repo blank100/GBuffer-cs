@@ -34,7 +34,7 @@ namespace Gal.Core
         /// <param name="element"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(T element) {
-            if (_position + 1 > _span.Length) GrowBuffer(1);
+            if ((uint)(_position + 1) > (uint)_span.Length) GrowBuffer(1);
             _span[_position++] = element;
         }
 

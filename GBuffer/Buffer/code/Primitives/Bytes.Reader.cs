@@ -1,8 +1,4 @@
-﻿//测试用预编译常量定义
-#define ENDIAN_CHECK
-#define BIGENDIAN
-
-namespace Gal.Core {
+﻿namespace Gal.Core {
     /// <summary>
     ///
     /// </summary>

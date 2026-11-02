@@ -20,7 +20,7 @@
             get => _position;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
-                Debug.Assert(0 <= value && value <= _buffer.Length, $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
+                if ((uint)value > (uint)_buffer.Length) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
                 _position = value;
             }
         }
@@ -51,7 +51,10 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read() => _buffer[_position++];
+        public T Read() {
+            if ((uint)_position >= (uint)_buffer.Length) throw new System.IO.EndOfStreamException("No more data to read.");
+            return _buffer[_position++];
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count) {

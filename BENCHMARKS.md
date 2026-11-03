@@ -38,7 +38,8 @@
 
 | 类型 | 写：Buffer（优化前 → 优化后） | 写：BinaryWriter | 读：Buffer / BinaryReader |
 |---|---|---|---|
-| Int8 / UInt8 | 0.25x → **0.35x**（968 → 1,365 ns） | 3,918 ns | 0.43x（1,876 vs 4,596 ns） |
+| Int8 / UInt8 | 0.25x → **0.38x**（968 → 1,459 ns） | 3,841 ns | 0.44x（1,519 vs 3,423 ns） |
+| Boolean | 0.85x → **0.42x**（3,308 → 1,577 ns） | 3,792 ns | 0.44x（1,389 vs 3,190 ns） |
 | Int16 | 0.47x → **0.17x**（3,122 → 1,493 ns） | 9,016 ns | 0.21x（1,459 vs 6,835 ns） |
 | Int32 | 0.43x → **0.17x**（2,989 → 1,414 ns） | 8,313 ns | 0.31x（2,076 vs 6,756 ns） |
 | Int64 | 0.34x → **0.18x**（2,419 → 1,478 ns） | 8,299 ns | 0.24x（1,699 vs 7,156 ns） |
@@ -52,8 +53,9 @@
 - 与同仓库 `ByteArray` 对照实现比：**所有定长写现在都不慢于 `ByteArray`**，多数快 2.3–6.8 倍
   （`Int32` 1,414 vs 3,648；`Int64` 1,478 vs 6,104；`Double` 1,767 vs 12,002；`UInt32` 1,358 vs 3,639；`UInt64` 1,820 vs 6,044）。
   优化前 `Int16` 写是明显洼地（`Buffer` 3,122 vs `ByteArray` 1,415），现已反超（1,493 vs 1,634）。
-- `WriteBoolean` 仍是洼地：`Buffer_WriteBoolean` 3,315 ns vs `ByteArray_WriteBoolean` 1,299 ns（2.55x），
-  因为它内部走 `self.Write(byte)` 接口调用；修法与本次相同，但不在本次三项问题范围内。
+- ✅ `WriteBoolean` 洼地已一并修复：`Buffer_WriteBoolean` 3,308 → **1,577 ns**（2.10x），
+  与 `ByteArray`（1,251 ns）的差距从 2.64x 收到 1.26x。原因是 `WriteBoolean<T>` 内部走 `self.Write(byte)`
+  接口约束调用；已补 `WriteInt8`/`WriteUInt8`/`WriteBoolean` 的具体重载（6 个）。
 
 ### 变长编码（VarInt / ZigZag）
 
@@ -196,78 +198,78 @@
 
 | Method | Categories | N | Mean | Error | StdDev | Median | Ratio | RatioSD |
 |---|---|---|---|---|---|---|---|---|
-| BinaryReader_ReadBoolean | ReadBoolean | 1 | 4.1572 ns | 0.1935 ns | 0.1810 ns | 4.1792 ns | 1.00 | 0.06 |
-| BinaryReader_ReadBoolean | ReadBoolean | 16 | 53.2420 ns | 2.1577 ns | 1.9128 ns | 52.7409 ns | 1.00 | 0.05 |
-| BinaryReader_ReadBoolean | ReadBoolean | 128 | 410.2733 ns | 10.5635 ns | 9.3642 ns | 409.3553 ns | 1.00 | 0.03 |
-| BinaryReader_ReadBoolean | ReadBoolean | 1024 | 3,326.1112 ns | 115.3781 ns | 107.9247 ns | 3,317.1596 ns | 1.00 | 0.04 |
-| BinaryReader_ReadInt8 | ReadInt8 | 1 | 3.8708 ns | 0.1138 ns | 0.0950 ns | 3.8568 ns | 1.00 | 0.03 |
-| BinaryReader_ReadInt8 | ReadInt8 | 16 | 50.8438 ns | 0.7736 ns | 0.6858 ns | 50.7960 ns | 1.00 | 0.02 |
-| BinaryReader_ReadInt8 | ReadInt8 | 128 | 420.6454 ns | 17.9761 ns | 16.8149 ns | 418.8209 ns | 1.00 | 0.05 |
-| BinaryReader_ReadInt8 | ReadInt8 | 1024 | 3,190.8774 ns | 70.6399 ns | 62.6204 ns | 3,169.5153 ns | 1.00 | 0.03 |
-| BinaryReader_ReadUInt8 | ReadUInt8 | 1 | 4.2273 ns | 0.2550 ns | 0.2260 ns | 4.1921 ns | 1.00 | 0.07 |
-| BinaryReader_ReadUInt8 | ReadUInt8 | 16 | 50.9180 ns | 0.8800 ns | 0.8232 ns | 50.6750 ns | 1.00 | 0.02 |
-| BinaryReader_ReadUInt8 | ReadUInt8 | 128 | 439.4055 ns | 20.7801 ns | 19.4377 ns | 436.7988 ns | 1.00 | 0.06 |
-| BinaryReader_ReadUInt8 | ReadUInt8 | 1024 | 4,596.1506 ns | 1,154.5324 ns | 1,079.9503 ns | 4,268.2944 ns | 1.05 | 0.32 |
-| BinaryWriter_WriteBoolean | WriteBoolean | 1 | 5.7163 ns | 0.2754 ns | 0.2576 ns | 5.7118 ns | 1.00 | 0.06 |
-| BinaryWriter_WriteBoolean | WriteBoolean | 16 | 75.9921 ns | 3.9542 ns | 3.5053 ns | 75.2154 ns | 1.00 | 0.06 |
-| BinaryWriter_WriteBoolean | WriteBoolean | 128 | 518.1229 ns | 29.3075 ns | 24.4730 ns | 518.1293 ns | 1.00 | 0.06 |
-| BinaryWriter_WriteBoolean | WriteBoolean | 1024 | 3,919.9207 ns | 96.1545 ns | 85.2385 ns | 3,910.8999 ns | 1.00 | 0.03 |
-| BinaryWriter_WriteInt8 | WriteInt8 | 1 | 5.5795 ns | 0.3891 ns | 0.3640 ns | 5.4724 ns | 1.00 | 0.09 |
-| BinaryWriter_WriteInt8 | WriteInt8 | 16 | 62.4573 ns | 2.6336 ns | 2.4635 ns | 62.6087 ns | 1.00 | 0.05 |
-| BinaryWriter_WriteInt8 | WriteInt8 | 128 | 469.7357 ns | 13.9968 ns | 11.6880 ns | 469.6579 ns | 1.00 | 0.03 |
-| BinaryWriter_WriteInt8 | WriteInt8 | 1024 | 3,760.9243 ns | 167.8953 ns | 148.8349 ns | 3,784.6431 ns | 1.00 | 0.05 |
-| BinaryWriter_WriteUInt8 | WriteUInt8 | 1 | 6.0692 ns | 0.3296 ns | 0.2753 ns | 6.0572 ns | 1.00 | 0.06 |
-| BinaryWriter_WriteUInt8 | WriteUInt8 | 16 | 62.2370 ns | 0.8481 ns | 0.6622 ns | 62.3049 ns | 1.00 | 0.01 |
-| BinaryWriter_WriteUInt8 | WriteUInt8 | 128 | 516.9062 ns | 28.8041 ns | 26.9434 ns | 518.0189 ns | 1.00 | 0.07 |
-| BinaryWriter_WriteUInt8 | WriteUInt8 | 1024 | 3,918.0358 ns | 189.1574 ns | 167.6831 ns | 3,869.2372 ns | 1.00 | 0.06 |
-| Buffer_ReadBoolean | ReadBoolean | 1 | 0.5963 ns | 0.0651 ns | 0.0609 ns | 0.5949 ns | 0.14 | 0.02 |
-| Buffer_ReadBoolean | ReadBoolean | 16 | 13.8429 ns | 0.3163 ns | 0.2959 ns | 13.8586 ns | 0.26 | 0.01 |
-| Buffer_ReadBoolean | ReadBoolean | 128 | 167.7089 ns | 7.8343 ns | 6.9449 ns | 168.3090 ns | 0.41 | 0.02 |
-| Buffer_ReadBoolean | ReadBoolean | 1024 | 1,337.7575 ns | 48.8094 ns | 40.7581 ns | 1,328.9571 ns | 0.40 | 0.02 |
-| Buffer_ReadInt8 | ReadInt8 | 1 | 0.5156 ns | 0.0317 ns | 0.0297 ns | 0.5135 ns | 0.13 | 0.01 |
-| Buffer_ReadInt8 | ReadInt8 | 16 | 13.1588 ns | 0.4475 ns | 0.4186 ns | 13.0202 ns | 0.26 | 0.01 |
-| Buffer_ReadInt8 | ReadInt8 | 128 | 133.2057 ns | 12.2608 ns | 10.8689 ns | 132.2829 ns | 0.32 | 0.03 |
-| Buffer_ReadInt8 | ReadInt8 | 1024 | 1,612.6393 ns | 91.0723 ns | 85.1891 ns | 1,633.1232 ns | 0.51 | 0.03 |
-| Buffer_ReadUInt8 | ReadUInt8 | 1 | 0.6380 ns | 0.1537 ns | 0.1438 ns | 0.6076 ns | 0.15 | 0.03 |
-| Buffer_ReadUInt8 | ReadUInt8 | 16 | 13.5266 ns | 0.5860 ns | 0.4575 ns | 13.5985 ns | 0.27 | 0.01 |
-| Buffer_ReadUInt8 | ReadUInt8 | 128 | 194.1139 ns | 34.8747 ns | 32.6218 ns | 183.3703 ns | 0.44 | 0.07 |
-| Buffer_ReadUInt8 | ReadUInt8 | 1024 | 1,875.5471 ns | 140.3673 ns | 131.2996 ns | 1,882.9399 ns | 0.43 | 0.09 |
-| Buffer_WriteBoolean | WriteBoolean | 1 | 4.2551 ns | 0.4876 ns | 0.4561 ns | 4.3139 ns | 0.75 | 0.08 |
-| Buffer_WriteBoolean | WriteBoolean | 16 | 59.7494 ns | 3.2038 ns | 2.8400 ns | 58.8007 ns | 0.79 | 0.05 |
-| Buffer_WriteBoolean | WriteBoolean | 128 | 436.6166 ns | 22.8161 ns | 20.2259 ns | 433.2421 ns | 0.84 | 0.05 |
-| Buffer_WriteBoolean | WriteBoolean | 1024 | 3,315.2814 ns | 97.1939 ns | 90.9153 ns | 3,293.0940 ns | 0.85 | 0.03 |
-| Buffer_WriteInt8 | WriteInt8 | 1 | 1.6954 ns | 0.0603 ns | 0.0504 ns | 1.6846 ns | 0.31 | 0.02 |
-| Buffer_WriteInt8 | WriteInt8 | 16 | 20.3512 ns | 0.4328 ns | 0.3837 ns | 20.4077 ns | 0.33 | 0.01 |
-| Buffer_WriteInt8 | WriteInt8 | 128 | 179.7814 ns | 5.9933 ns | 5.3129 ns | 177.8405 ns | 0.38 | 0.01 |
-| Buffer_WriteInt8 | WriteInt8 | 1024 | 1,391.8764 ns | 78.5981 ns | 69.6751 ns | 1,370.7291 ns | 0.37 | 0.02 |
-| Buffer_WriteUInt8 | WriteUInt8 | 1 | 2.0912 ns | 0.1628 ns | 0.1523 ns | 2.0546 ns | 0.35 | 0.03 |
-| Buffer_WriteUInt8 | WriteUInt8 | 16 | 21.3426 ns | 1.2558 ns | 1.1747 ns | 21.2689 ns | 0.34 | 0.02 |
-| Buffer_WriteUInt8 | WriteUInt8 | 128 | 179.2637 ns | 4.7734 ns | 4.2315 ns | 180.3396 ns | 0.35 | 0.02 |
-| Buffer_WriteUInt8 | WriteUInt8 | 1024 | 1,365.3798 ns | 66.4718 ns | 58.9255 ns | 1,345.7669 ns | 0.35 | 0.02 |
-| ByteArray_ReadBoolean | ReadBoolean | 1 | 0.7022 ns | 0.1230 ns | 0.1091 ns | 0.6943 ns | 0.17 | 0.03 |
-| ByteArray_ReadBoolean | ReadBoolean | 16 | 12.3619 ns | 0.7044 ns | 0.6244 ns | 12.1093 ns | 0.23 | 0.01 |
-| ByteArray_ReadBoolean | ReadBoolean | 128 | 100.6086 ns | 1.7443 ns | 1.6316 ns | 99.9220 ns | 0.25 | 0.01 |
-| ByteArray_ReadBoolean | ReadBoolean | 1024 | 1,167.1058 ns | 133.3621 ns | 118.2220 ns | 1,175.6010 ns | 0.35 | 0.04 |
-| ByteArray_ReadInt8 | ReadInt8 | 1 | 0.6609 ns | 0.0903 ns | 0.0845 ns | 0.6419 ns | 0.17 | 0.02 |
-| ByteArray_ReadInt8 | ReadInt8 | 16 | 11.4884 ns | 0.4378 ns | 0.4095 ns | 11.4532 ns | 0.23 | 0.01 |
-| ByteArray_ReadInt8 | ReadInt8 | 128 | 243.7822 ns | 4.4039 ns | 3.9039 ns | 243.0149 ns | 0.58 | 0.02 |
-| ByteArray_ReadInt8 | ReadInt8 | 1024 | 1,208.8786 ns | 171.5351 ns | 160.4540 ns | 1,177.4181 ns | 0.38 | 0.05 |
-| ByteArray_ReadUInt8 | ReadUInt8 | 1 | 0.4368 ns | 0.1404 ns | 0.1313 ns | 0.4081 ns | 0.10 | 0.03 |
-| ByteArray_ReadUInt8 | ReadUInt8 | 16 | 10.8021 ns | 0.2494 ns | 0.2211 ns | 10.7794 ns | 0.21 | 0.01 |
-| ByteArray_ReadUInt8 | ReadUInt8 | 128 | 120.9690 ns | 25.9750 ns | 24.2971 ns | 111.8270 ns | 0.28 | 0.05 |
-| ByteArray_ReadUInt8 | ReadUInt8 | 1024 | 1,609.5256 ns | 173.7767 ns | 135.6734 ns | 1,598.9673 ns | 0.37 | 0.08 |
-| ByteArray_WriteBoolean | WriteBoolean | 1 | 2.1377 ns | 0.2347 ns | 0.2195 ns | 2.1457 ns | 0.37 | 0.04 |
-| ByteArray_WriteBoolean | WriteBoolean | 16 | 23.1746 ns | 1.3433 ns | 1.1217 ns | 23.2186 ns | 0.31 | 0.02 |
-| ByteArray_WriteBoolean | WriteBoolean | 128 | 166.2734 ns | 5.5703 ns | 5.2105 ns | 167.6576 ns | 0.32 | 0.02 |
-| ByteArray_WriteBoolean | WriteBoolean | 1024 | 1,298.9432 ns | 40.8654 ns | 38.2255 ns | 1,289.9200 ns | 0.33 | 0.01 |
-| ByteArray_WriteInt8 | WriteInt8 | 1 | 2.0369 ns | 0.1056 ns | 0.0936 ns | 2.0226 ns | 0.37 | 0.03 |
-| ByteArray_WriteInt8 | WriteInt8 | 16 | 21.6184 ns | 1.0981 ns | 0.9170 ns | 21.7151 ns | 0.35 | 0.02 |
-| ByteArray_WriteInt8 | WriteInt8 | 128 | 159.2600 ns | 4.2681 ns | 3.9924 ns | 160.1310 ns | 0.34 | 0.01 |
-| ByteArray_WriteInt8 | WriteInt8 | 1024 | 1,377.1909 ns | 64.8732 ns | 60.6824 ns | 1,370.1417 ns | 0.37 | 0.02 |
-| ByteArray_WriteUInt8 | WriteUInt8 | 1 | 2.1132 ns | 0.1587 ns | 0.1325 ns | 2.1570 ns | 0.35 | 0.03 |
-| ByteArray_WriteUInt8 | WriteUInt8 | 16 | 22.6050 ns | 0.9657 ns | 0.8561 ns | 22.7227 ns | 0.36 | 0.01 |
-| ByteArray_WriteUInt8 | WriteUInt8 | 128 | 173.3493 ns | 11.2524 ns | 10.5255 ns | 170.9933 ns | 0.34 | 0.03 |
-| ByteArray_WriteUInt8 | WriteUInt8 | 1024 | 1,310.4371 ns | 58.7008 ns | 54.9088 ns | 1,291.6356 ns | 0.34 | 0.02 |
+| BinaryReader_ReadBoolean | ReadBoolean | 1 | 3.8957 ns | 0.0719 ns | 0.0637 ns | 3.8756 ns | 1.00 | 0.02 |
+| BinaryReader_ReadBoolean | ReadBoolean | 16 | 51.7634 ns | 1.6587 ns | 1.5516 ns | 50.9022 ns | 1.00 | 0.04 |
+| BinaryReader_ReadBoolean | ReadBoolean | 128 | 419.3950 ns | 19.4183 ns | 18.1639 ns | 409.8221 ns | 1.00 | 0.06 |
+| BinaryReader_ReadBoolean | ReadBoolean | 1024 | 3,190.1160 ns | 70.6324 ns | 66.0696 ns | 3,164.3492 ns | 1.00 | 0.03 |
+| BinaryReader_ReadInt8 | ReadInt8 | 1 | 4.0112 ns | 0.1087 ns | 0.1017 ns | 3.9667 ns | 1.00 | 0.03 |
+| BinaryReader_ReadInt8 | ReadInt8 | 16 | 52.5332 ns | 1.6625 ns | 1.4738 ns | 52.6462 ns | 1.00 | 0.04 |
+| BinaryReader_ReadInt8 | ReadInt8 | 128 | 408.6505 ns | 7.4364 ns | 6.9560 ns | 407.1061 ns | 1.00 | 0.02 |
+| BinaryReader_ReadInt8 | ReadInt8 | 1024 | 3,294.3983 ns | 94.6246 ns | 83.8823 ns | 3,277.5242 ns | 1.00 | 0.03 |
+| BinaryReader_ReadUInt8 | ReadUInt8 | 1 | 4.6126 ns | 0.2154 ns | 0.1910 ns | 4.6095 ns | 1.00 | 0.06 |
+| BinaryReader_ReadUInt8 | ReadUInt8 | 16 | 52.3925 ns | 1.9492 ns | 1.7279 ns | 52.3392 ns | 1.00 | 0.04 |
+| BinaryReader_ReadUInt8 | ReadUInt8 | 128 | 429.0111 ns | 15.6839 ns | 13.0968 ns | 427.3726 ns | 1.00 | 0.04 |
+| BinaryReader_ReadUInt8 | ReadUInt8 | 1024 | 3,423.1885 ns | 118.8774 ns | 105.3817 ns | 3,452.0625 ns | 1.00 | 0.04 |
+| BinaryWriter_WriteBoolean | WriteBoolean | 1 | 5.8026 ns | 0.2263 ns | 0.2116 ns | 5.7710 ns | 1.00 | 0.05 |
+| BinaryWriter_WriteBoolean | WriteBoolean | 16 | 64.8655 ns | 3.0926 ns | 2.8928 ns | 63.7559 ns | 1.00 | 0.06 |
+| BinaryWriter_WriteBoolean | WriteBoolean | 128 | 497.4676 ns | 10.2253 ns | 9.5648 ns | 498.6804 ns | 1.00 | 0.03 |
+| BinaryWriter_WriteBoolean | WriteBoolean | 1024 | 3,792.4698 ns | 23.1336 ns | 18.0612 ns | 3,795.3348 ns | 1.00 | 0.01 |
+| BinaryWriter_WriteInt8 | WriteInt8 | 1 | 5.4866 ns | 0.2482 ns | 0.2321 ns | 5.4907 ns | 1.00 | 0.06 |
+| BinaryWriter_WriteInt8 | WriteInt8 | 16 | 60.2246 ns | 1.0626 ns | 0.9420 ns | 60.1472 ns | 1.00 | 0.02 |
+| BinaryWriter_WriteInt8 | WriteInt8 | 128 | 486.8043 ns | 14.7352 ns | 13.0624 ns | 488.7621 ns | 1.00 | 0.04 |
+| BinaryWriter_WriteInt8 | WriteInt8 | 1024 | 4,972.8931 ns | 66.1240 ns | 61.8524 ns | 4,951.6595 ns | 1.00 | 0.02 |
+| BinaryWriter_WriteUInt8 | WriteUInt8 | 1 | 5.4698 ns | 0.1374 ns | 0.1218 ns | 5.4274 ns | 1.00 | 0.03 |
+| BinaryWriter_WriteUInt8 | WriteUInt8 | 16 | 66.0845 ns | 3.0475 ns | 2.5448 ns | 66.1503 ns | 1.00 | 0.05 |
+| BinaryWriter_WriteUInt8 | WriteUInt8 | 128 | 500.6938 ns | 16.2157 ns | 15.1681 ns | 499.1110 ns | 1.00 | 0.04 |
+| BinaryWriter_WriteUInt8 | WriteUInt8 | 1024 | 3,841.4447 ns | 92.9441 ns | 82.3925 ns | 3,839.6960 ns | 1.00 | 0.03 |
+| Buffer_ReadBoolean | ReadBoolean | 1 | 0.5654 ns | 0.0233 ns | 0.0195 ns | 0.5621 ns | 0.15 | 0.01 |
+| Buffer_ReadBoolean | ReadBoolean | 16 | 14.7988 ns | 1.0182 ns | 0.9026 ns | 14.4813 ns | 0.29 | 0.02 |
+| Buffer_ReadBoolean | ReadBoolean | 128 | 153.8953 ns | 4.0530 ns | 3.5929 ns | 154.7591 ns | 0.37 | 0.02 |
+| Buffer_ReadBoolean | ReadBoolean | 1024 | 1,389.1937 ns | 103.1012 ns | 96.4409 ns | 1,357.1747 ns | 0.44 | 0.03 |
+| Buffer_ReadInt8 | ReadInt8 | 1 | 0.7496 ns | 0.0713 ns | 0.0632 ns | 0.7357 ns | 0.19 | 0.02 |
+| Buffer_ReadInt8 | ReadInt8 | 16 | 13.4557 ns | 0.4656 ns | 0.4355 ns | 13.2726 ns | 0.26 | 0.01 |
+| Buffer_ReadInt8 | ReadInt8 | 128 | 152.9960 ns | 13.1976 ns | 12.3451 ns | 150.2105 ns | 0.37 | 0.03 |
+| Buffer_ReadInt8 | ReadInt8 | 1024 | 1,741.0674 ns | 140.8064 ns | 131.7104 ns | 1,722.5461 ns | 0.53 | 0.04 |
+| Buffer_ReadUInt8 | ReadUInt8 | 1 | 0.6057 ns | 0.1849 ns | 0.1729 ns | 0.5421 ns | 0.13 | 0.04 |
+| Buffer_ReadUInt8 | ReadUInt8 | 16 | 13.4112 ns | 0.5166 ns | 0.4833 ns | 13.4186 ns | 0.26 | 0.01 |
+| Buffer_ReadUInt8 | ReadUInt8 | 128 | 165.7123 ns | 16.9204 ns | 15.8274 ns | 162.1922 ns | 0.39 | 0.04 |
+| Buffer_ReadUInt8 | ReadUInt8 | 1024 | 1,518.6945 ns | 74.5717 ns | 69.7544 ns | 1,493.8819 ns | 0.44 | 0.02 |
+| Buffer_WriteBoolean | WriteBoolean | 1 | 2.0584 ns | 0.1295 ns | 0.1211 ns | 2.0641 ns | 0.36 | 0.02 |
+| Buffer_WriteBoolean | WriteBoolean | 16 | 21.0458 ns | 0.9954 ns | 0.9311 ns | 20.9213 ns | 0.33 | 0.02 |
+| Buffer_WriteBoolean | WriteBoolean | 128 | 172.0667 ns | 5.7373 ns | 5.3667 ns | 171.8637 ns | 0.35 | 0.01 |
+| Buffer_WriteBoolean | WriteBoolean | 1024 | 1,576.9717 ns | 122.4019 ns | 102.2111 ns | 1,544.6596 ns | 0.42 | 0.03 |
+| Buffer_WriteInt8 | WriteInt8 | 1 | 1.9618 ns | 0.1621 ns | 0.1516 ns | 1.9113 ns | 0.36 | 0.03 |
+| Buffer_WriteInt8 | WriteInt8 | 16 | 21.4852 ns | 1.1583 ns | 1.0835 ns | 21.4572 ns | 0.36 | 0.02 |
+| Buffer_WriteInt8 | WriteInt8 | 128 | 173.7293 ns | 7.0569 ns | 6.2558 ns | 173.3502 ns | 0.36 | 0.02 |
+| Buffer_WriteInt8 | WriteInt8 | 1024 | 1,469.9574 ns | 163.4507 ns | 152.8919 ns | 1,444.1555 ns | 0.30 | 0.03 |
+| Buffer_WriteUInt8 | WriteUInt8 | 1 | 2.0358 ns | 0.1949 ns | 0.1823 ns | 2.0443 ns | 0.37 | 0.03 |
+| Buffer_WriteUInt8 | WriteUInt8 | 16 | 20.7681 ns | 0.9205 ns | 0.8160 ns | 20.4099 ns | 0.31 | 0.02 |
+| Buffer_WriteUInt8 | WriteUInt8 | 128 | 171.9181 ns | 4.7951 ns | 4.4853 ns | 171.1879 ns | 0.34 | 0.01 |
+| Buffer_WriteUInt8 | WriteUInt8 | 1024 | 1,458.9674 ns | 197.4147 ns | 184.6618 ns | 1,393.5410 ns | 0.38 | 0.05 |
+| ByteArray_ReadBoolean | ReadBoolean | 1 | 0.6444 ns | 0.0712 ns | 0.0631 ns | 0.6182 ns | 0.17 | 0.02 |
+| ByteArray_ReadBoolean | ReadBoolean | 16 | 11.4312 ns | 0.2861 ns | 0.2536 ns | 11.3598 ns | 0.22 | 0.01 |
+| ByteArray_ReadBoolean | ReadBoolean | 128 | 112.2694 ns | 9.1822 ns | 8.5890 ns | 112.2042 ns | 0.27 | 0.02 |
+| ByteArray_ReadBoolean | ReadBoolean | 1024 | 1,016.3633 ns | 115.0032 ns | 107.5741 ns | 1,020.7729 ns | 0.32 | 0.03 |
+| ByteArray_ReadInt8 | ReadInt8 | 1 | 0.5504 ns | 0.0776 ns | 0.0726 ns | 0.5163 ns | 0.14 | 0.02 |
+| ByteArray_ReadInt8 | ReadInt8 | 16 | 11.1254 ns | 0.2832 ns | 0.2649 ns | 11.1769 ns | 0.21 | 0.01 |
+| ByteArray_ReadInt8 | ReadInt8 | 128 | 115.1326 ns | 13.1134 ns | 11.6247 ns | 111.8159 ns | 0.28 | 0.03 |
+| ByteArray_ReadInt8 | ReadInt8 | 1024 | 1,342.9486 ns | 179.3816 ns | 167.7936 ns | 1,304.1830 ns | 0.41 | 0.05 |
+| ByteArray_ReadUInt8 | ReadUInt8 | 1 | 0.1500 ns | 0.1142 ns | 0.1068 ns | 0.1413 ns | 0.03 | 0.02 |
+| ByteArray_ReadUInt8 | ReadUInt8 | 16 | 11.5468 ns | 0.7669 ns | 0.7173 ns | 11.6421 ns | 0.22 | 0.01 |
+| ByteArray_ReadUInt8 | ReadUInt8 | 128 | 111.0749 ns | 12.6295 ns | 11.8137 ns | 109.6052 ns | 0.26 | 0.03 |
+| ByteArray_ReadUInt8 | ReadUInt8 | 1024 | 1,560.9568 ns | 118.5640 ns | 110.9048 ns | 1,528.4441 ns | 0.46 | 0.03 |
+| ByteArray_WriteBoolean | WriteBoolean | 1 | 1.9259 ns | 0.1296 ns | 0.1212 ns | 1.9057 ns | 0.33 | 0.02 |
+| ByteArray_WriteBoolean | WriteBoolean | 16 | 20.7548 ns | 0.5301 ns | 0.4138 ns | 20.6706 ns | 0.32 | 0.01 |
+| ByteArray_WriteBoolean | WriteBoolean | 128 | 156.9127 ns | 4.7655 ns | 3.9794 ns | 155.7490 ns | 0.32 | 0.01 |
+| ByteArray_WriteBoolean | WriteBoolean | 1024 | 1,250.6967 ns | 47.2481 ns | 44.1959 ns | 1,241.3349 ns | 0.33 | 0.01 |
+| ByteArray_WriteInt8 | WriteInt8 | 1 | 1.8266 ns | 0.1243 ns | 0.1102 ns | 1.8069 ns | 0.33 | 0.02 |
+| ByteArray_WriteInt8 | WriteInt8 | 16 | 22.4567 ns | 1.3188 ns | 1.2336 ns | 22.0092 ns | 0.37 | 0.02 |
+| ByteArray_WriteInt8 | WriteInt8 | 128 | 153.3694 ns | 2.8765 ns | 2.6907 ns | 153.2348 ns | 0.32 | 0.01 |
+| ByteArray_WriteInt8 | WriteInt8 | 1024 | 1,274.5877 ns | 54.7146 ns | 48.5031 ns | 1,254.7490 ns | 0.26 | 0.01 |
+| ByteArray_WriteUInt8 | WriteUInt8 | 1 | 2.0534 ns | 0.0778 ns | 0.0690 ns | 2.0375 ns | 0.38 | 0.01 |
+| ByteArray_WriteUInt8 | WriteUInt8 | 16 | 22.1645 ns | 1.0575 ns | 0.9892 ns | 21.9002 ns | 0.34 | 0.02 |
+| ByteArray_WriteUInt8 | WriteUInt8 | 128 | 160.2207 ns | 8.2259 ns | 7.6945 ns | 160.6720 ns | 0.32 | 0.02 |
+| ByteArray_WriteUInt8 | WriteUInt8 | 1024 | 1,283.1079 ns | 24.6955 ns | 21.8919 ns | 1,286.8597 ns | 0.33 | 0.01 |
 
 ## CircularBufferBenchmark
 

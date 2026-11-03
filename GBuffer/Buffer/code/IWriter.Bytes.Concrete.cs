@@ -8,6 +8,8 @@ namespace Gal.Core {
     /// 每次写入都要经过接口分发 + GetSpan(sizeHint)/Advance 往返，比等价的手写 Span 写慢约 5~6 倍；</para>
     /// <para>而读路径（<see cref="ReaderByteEx"/>）一直是 Reader&lt;byte&gt;/Buffer&lt;byte&gt; 的具体重载。
     /// 本文件补齐这一不对称：为 byte 写入器提供具体类型重载，让 JIT 能做去虚化与内联。</para>
+    /// <para>覆盖 11 个可写类型（Int8/UInt8/Boolean/Int16/UInt16/Int32/UInt32/Int64/UInt64/Float/Double）
+    /// 的 Buffer&lt;byte&gt; 与 Writer&lt;byte&gt; 两套接收者，共 22 个重载。</para>
     /// <para>泛型版本保留，供自定义 <see cref="IWriter{T}"/> 实现使用；对 Buffer&lt;byte&gt;/Writer&lt;byte&gt; 接收者，
     /// 重载决议会优先选中本文件中的具体版本，调用方源码无需改动。</para>
     /// </summary>
@@ -17,6 +19,72 @@ namespace Gal.Core {
     /// 常规情况省掉一次 HintSize 调用与一次 Span 重建，容量不足时行为与泛型版本完全一致。
     /// </remarks>
     public static partial class WriterByteEx {
+
+        // ---- 1 字节类型 ----
+        // 这三个泛型版本内部都走 self.Write(byte)（接口约束调用，无法内联），
+        // 实测 WriteBoolean 比 WriteUInt8 慢约 1.6x，故同样补具体重载。
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteInt8(this Buffer<byte> self, sbyte value) {
+            if (self.WritableCount >= sizeof(sbyte)) {
+                self.Span[0] = (byte)value;
+                self.Advance(sizeof(sbyte));
+                return;
+            }
+            self.Write((byte)value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteUInt8(this Buffer<byte> self, byte value) {
+            if (self.WritableCount >= sizeof(byte)) {
+                self.Span[0] = value;
+                self.Advance(sizeof(byte));
+                return;
+            }
+            self.Write(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteBoolean(this Buffer<byte> self, bool value) {
+            if (self.WritableCount >= sizeof(byte)) {
+                self.Span[0] = value ? (byte)1 : (byte)0;
+                self.Advance(sizeof(byte));
+                return;
+            }
+            self.Write(value ? (byte)1 : (byte)0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteInt8(this Writer<byte> self, sbyte value) {
+            if (self.WritableCount >= sizeof(sbyte)) {
+                self.Span[0] = (byte)value;
+                self.Advance(sizeof(sbyte));
+                return;
+            }
+            self.Write((byte)value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteUInt8(this Writer<byte> self, byte value) {
+            if (self.WritableCount >= sizeof(byte)) {
+                self.Span[0] = value;
+                self.Advance(sizeof(byte));
+                return;
+            }
+            self.Write(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteBoolean(this Writer<byte> self, bool value) {
+            if (self.WritableCount >= sizeof(byte)) {
+                self.Span[0] = value ? (byte)1 : (byte)0;
+                self.Advance(sizeof(byte));
+                return;
+            }
+            self.Write(value ? (byte)1 : (byte)0);
+        }
+
+        // ---- 2 字节及以上 ----
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteUInt16(this Buffer<byte> self, ushort value) {

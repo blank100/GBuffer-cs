@@ -250,7 +250,7 @@ GBuffer/Buffer/code/IWriter.Bytes.cs : 16 个 writer 全部是泛型 WriteX<T>(t
 > 详见 `OPTIMIZATION.md`（改动清单、验证矩阵、复现命令）。
 
 实现方式：新增手写文件 `GBuffer/Buffer/code/IWriter.Bytes.Concrete.cs`，
-为 `Buffer<byte>` 与 `Writer<byte>` 各 8 个数值类型共 **16 个具体重载**，
+为 `Buffer<byte>` 与 `Writer<byte>` 各 11 个类型（含 Int8/UInt8/Boolean）共 **22 个具体重载**，
 并把 `IWriter.Bytes.cs` / `IWriter.Bytes.tt` 的生成类改为 `partial`（模板同步，重新生成不会丢）。
 
 每个重载采用**融合快路径**，而不是简单替换签名：
@@ -283,6 +283,11 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 已应用版本 **`Buffer_WriteInt16`（1,493 ns）反超 `ByteArray_WriteInt16`（1,634 ns）**，
 第 3 项现象消失；`Buffer_WriteDouble` 从 3,081 ns 降到 1,767 ns。
 
+**追加修复（1 字节类型）：** 探针发现 `WriteBoolean<T>` 内部走 `self.Write(byte)` 接口约束调用，
+比 `WriteUInt8` 慢约 1.6x（`Buffer_WriteBoolean` 3,308 ns vs `WriteUInt8` 1,459 ns）。
+已补 `WriteInt8`/`WriteUInt8`/`WriteBoolean` 的具体重载（6 个），实测 `Buffer_WriteBoolean`
+**3,308 → 1,577 ns**（2.10x），与 `ByteArray`（1,251 ns）的差距从 2.64x 收到 1.26x。
+
 **全量复跑确认（544 个 case，18 个基准类，41 分 47 秒）：** 所有定长写路径一致改善，
 `Buffer_WriteDoubleBE` 5.98x → **2.05x**，`Buffer_WriteInt16` 1,493 ns（0.17x），
 `Buffer_WriteInt32` 1,414 ns、`Buffer_WriteInt64` 1,478 ns、`Buffer_WriteDouble` 1,767 ns，
@@ -294,9 +299,9 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 | 验证 | 结果 |
 |---|---|
 | 仓库既有单元测试（离线 xunit 兼容层跑 `Buffer.Test/*.cs` 全部 81 个 `[Fact]`） | **81 通过，0 失败** |
-| 专项验证（`/home/user/probe/Verify.cs`，22 项） | **22 通过，0 失败** |
+| 专项验证（`/home/user/probe/Verify.cs`，25 项） | **25 通过，0 失败** |
 
-22 项覆盖：具体重载与泛型扩展**逐字节一致**（`Buffer<byte>` 与 `Writer<byte>` 各一份）、
+25 项覆盖：具体重载与泛型扩展**逐字节一致**（`Buffer<byte>` 与 `Writer<byte>` 各一份）、
 `Position`/`Length` 一致、10 个值语义回读（含 `bigEndian: true`）、
 从 `capacity = 4` 起 500×4B / 500×8B 扩容不丢数据、容量恰好等于一次写入的临界case、
 写到末尾再写触发扩容、100 条 `int32+int64+double+float+uint16+utf8` 交错往返、

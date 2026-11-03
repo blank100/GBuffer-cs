@@ -78,13 +78,11 @@
 ### 大端 / 非对齐
 
 - `Span_WriteInt32BE` 0.72x、`Span_WriteInt64BE` 0.98x：与 `BinaryPrimitives` 手写大端同量级或更快。
-- `Span_ReadInt32BE` 1.43x、`Span_ReadDoubleBE` 1.32x：大端读仍比手写慢 30–43%。
-  差距来自库侧多出的 `EndOfStreamException` 长度检查（手写基线不做检查）；
-  试过用 `BinaryPrimitives.ReadInt32BigEndian` 等 intrinsic 替代手动 `ReverseEndianness`，实测无收益（`ReadInt32BE` 反而 751 → 1,006 ns），已回退。
-- ✅ `Buffer_WriteDoubleBE` 从 **5.98x** 降到 **2.05x**（1,347 vs 656 ns）——第 2 项问题已收敛；
-  再补批量写 `WriteSpan<T>` 后，`Buffer_WriteDoubleBE_Batch` 达到 **705.3 ns（0.97x）**，
-  已**快于**手写大端基线 `Manual_WriteDoubleBE`（730.5 ns）。
-  逐个写的 `Buffer_WriteDoubleBE` 仍为 1,767.6 ns（2.42x），批量场景应优先用 `WriteSpan`。
+- ✅ `Span_ReadInt32BE` **1.01x**、`Span_ReadDoubleBE` **1.02x**：大端读与手写基线持平。
+  （恢复环境后复跑；此前记录的 1.32–1.43x 是沙箱 2 vCPU 负载噪声，同一份未改代码在不同批次可差 30–40%。）
+- ✅ `Buffer_WriteDoubleBE` 从 **5.98x** 降到 **2.05x**（全量复跑）；再补批量写 `WriteSpan<T>` 后，
+  `Buffer_WriteDoubleBE_Batch` 达到 **1.09x**（816.5 vs 745.9 ns），与手写基线同量级。
+  逐个写的 `Buffer_WriteDoubleBE` 仍为 3.41x（2,543 ns），批量场景应优先用 `WriteSpan`。
 
 ### CircularBuffer vs Queue
 

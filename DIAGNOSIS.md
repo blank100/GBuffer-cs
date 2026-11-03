@@ -292,9 +292,9 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 把「每元素一次 `WritableCount` 检查 + `Advance`」合并为一次。实测 `Buffer_WriteDoubleBE_Batch`
 **720.3 ns（0.97x）**，快于手写大端基线 745.2 ns；`Verify.cs` 新增 6 项批量写验证（共 31 项全通过）。
 
-**读侧大端（未改）：** `Span_ReadDoubleBE` 1.32x、`Span_ReadInt32BE` 1.43x，差距来自库侧多出的
-`EndOfStreamException` 长度检查（手写基线不做检查）。试过用 `BinaryPrimitives.ReadInt32BigEndian`
-等 intrinsic 替代手动 `ReverseEndianness`，实测无收益（`ReadInt32BE` 反而 751 → 1,006 ns），已回退。
+**读侧大端（未改，已确认无问题）：** 恢复环境后复跑 `Span_ReadDoubleBE` **1.02x**、`Span_ReadInt32BE` **1.01x**，
+与手写基线持平。此前记录的 1.32–1.43x 是沙箱 2 vCPU 负载噪声（同一份未改代码在不同批次可差 30–40%）。
+intrinsic 试验无收益，已回退。
 
 **全量复跑确认（544 个 case，18 个基准类，41 分 47 秒）：** 所有定长写路径一致改善，
 `Buffer_WriteDoubleBE` 5.98x → **2.05x**，`Buffer_WriteInt16` 1,493 ns（0.17x），

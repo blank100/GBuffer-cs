@@ -362,38 +362,38 @@
 
 | Method | Categories | N | Mean | Error | StdDev | Median | Ratio | RatioSD |
 |---|---|---|---|---|---|---|---|---|
-| Buffer_ReadByte | GenericRead | 1 | 0.4011 ns | 0.1287 ns | 0.1203 ns | 0.4149 ns | 1.10 | 0.48 |
-| Buffer_ReadByte | GenericRead | 16 | 13.6523 ns | 0.6942 ns | 0.6154 ns | 13.6680 ns | 1.00 | 0.06 |
-| Buffer_ReadByte | GenericRead | 128 | 181.0332 ns | 12.3629 ns | 10.9594 ns | 181.0120 ns | 1.00 | 0.08 |
-| Buffer_ReadByte | GenericRead | 1024 | 1,361.3976 ns | 150.5206 ns | 140.7971 ns | 1,349.7488 ns | 1.01 | 0.14 |
-| Buffer_Write6Bytes | GenericWrite6 | 1 | 0.6261 ns | 0.1388 ns | 0.1298 ns | 0.6312 ns | 1.05 | 0.34 |
-| Buffer_Write6Bytes | GenericWrite6 | 16 | 4.6321 ns | 0.3366 ns | 0.3149 ns | 4.6459 ns | 1.00 | 0.09 |
-| Buffer_Write6Bytes | GenericWrite6 | 128 | 42.3932 ns | 2.4814 ns | 2.3211 ns | 42.6990 ns | 1.00 | 0.07 |
-| Buffer_Write6Bytes | GenericWrite6 | 1024 | 326.2007 ns | 14.6230 ns | 12.9629 ns | 325.8763 ns | 1.00 | 0.05 |
-| Buffer_WriteByte | GenericWrite | 1 | 2.2653 ns | 0.2672 ns | 0.2369 ns | 2.2087 ns | 1.01 | 0.14 |
-| Buffer_WriteByte | GenericWrite | 16 | 22.6943 ns | 1.3032 ns | 1.2190 ns | 22.7119 ns | 1.00 | 0.07 |
-| Buffer_WriteByte | GenericWrite | 128 | 191.4985 ns | 8.2998 ns | 7.7636 ns | 190.2605 ns | 1.00 | 0.06 |
-| Buffer_WriteByte | GenericWrite | 1024 | 1,461.6055 ns | 86.5204 ns | 76.6981 ns | 1,477.6072 ns | 1.00 | 0.07 |
-| Buffer_WriteSpan | GenericWriteSpan | 1 | 5.6623 ns | 0.4671 ns | 0.4369 ns | 5.6633 ns | 1.01 | 0.10 |
-| Buffer_WriteSpan | GenericWriteSpan | 16 | 5.0986 ns | 0.1829 ns | 0.1711 ns | 5.1028 ns | 1.00 | 0.05 |
-| Buffer_WriteSpan | GenericWriteSpan | 128 | 10.5165 ns | 0.3672 ns | 0.3435 ns | 10.5654 ns | 1.00 | 0.04 |
-| Buffer_WriteSpan | GenericWriteSpan | 1024 | 76.7870 ns | 3.9349 ns | 3.6807 ns | 76.9628 ns | 1.00 | 0.07 |
-| Reader_ReadElement | GenericRead | 1 | 6.9804 ns | 0.5380 ns | 0.5033 ns | 6.8461 ns | 19.07 | 6.16 |
-| Reader_ReadElement | GenericRead | 16 | 13.6353 ns | 1.0982 ns | 1.0273 ns | 13.1732 ns | 1.00 | 0.09 |
-| Reader_ReadElement | GenericRead | 128 | 95.6868 ns | 6.4197 ns | 6.0050 ns | 95.8110 ns | 0.53 | 0.05 |
-| Reader_ReadElement | GenericRead | 1024 | 1,087.5129 ns | 128.3601 ns | 113.7879 ns | 1,096.0884 ns | 0.81 | 0.12 |
-| Writer_Write6Elements | GenericWrite6 | 1 | 1.0833 ns | 0.0936 ns | 0.0781 ns | 1.0981 ns | 1.82 | 0.47 |
-| Writer_Write6Elements | GenericWrite6 | 16 | 5.4840 ns | 0.2828 ns | 0.2507 ns | 5.3902 ns | 1.19 | 0.09 |
-| Writer_Write6Elements | GenericWrite6 | 128 | 51.2609 ns | 3.1832 ns | 2.9776 ns | 50.6560 ns | 1.21 | 0.09 |
-| Writer_Write6Elements | GenericWrite6 | 1024 | 358.9933 ns | 19.6497 ns | 17.4189 ns | 356.3882 ns | 1.10 | 0.07 |
-| Writer_WriteElement | GenericWrite | 1 | 2.8243 ns | 0.1906 ns | 0.1783 ns | 2.8295 ns | 1.26 | 0.14 |
-| Writer_WriteElement | GenericWrite | 16 | 27.0783 ns | 1.5184 ns | 1.4203 ns | 26.7544 ns | 1.20 | 0.09 |
-| Writer_WriteElement | GenericWrite | 128 | 221.2423 ns | 14.5733 ns | 12.9189 ns | 220.3145 ns | 1.16 | 0.08 |
-| Writer_WriteElement | GenericWrite | 1024 | 1,679.9747 ns | 71.0539 ns | 62.9874 ns | 1,673.6439 ns | 1.15 | 0.07 |
-| Writer_WriteSpan | GenericWriteSpan | 1 | 5.0706 ns | 0.2303 ns | 0.2154 ns | 5.1658 ns | 0.90 | 0.08 |
-| Writer_WriteSpan | GenericWriteSpan | 16 | 4.8056 ns | 0.3538 ns | 0.3310 ns | 4.7859 ns | 0.94 | 0.07 |
-| Writer_WriteSpan | GenericWriteSpan | 128 | 10.2897 ns | 0.8260 ns | 0.7727 ns | 10.1982 ns | 0.98 | 0.08 |
-| Writer_WriteSpan | GenericWriteSpan | 1024 | 72.0994 ns | 2.4042 ns | 2.1313 ns | 71.7851 ns | 0.94 | 0.05 |
+| Buffer_ReadByte | GenericRead | 1 | 0.3092 ns | 0.1295 ns | 0.1211 ns | 0.2553 ns | 1.14 | 0.60 |
+| Buffer_ReadByte | GenericRead | 16 | 12.9316 ns | 0.5623 ns | 0.5260 ns | 12.7534 ns | 1.00 | 0.06 |
+| Buffer_ReadByte | GenericRead | 128 | 115.5524 ns | 8.2976 ns | 7.7616 ns | 114.7578 ns | 1.00 | 0.09 |
+| Buffer_ReadByte | GenericRead | 1024 | 1,214.3893 ns | 152.3484 ns | 142.5068 ns | 1,175.2519 ns | 1.01 | 0.16 |
+| Buffer_Write6Bytes | GenericWrite6 | 1 | 0.5725 ns | 0.1472 ns | 0.1377 ns | 0.5513 ns | 1.05 | 0.35 |
+| Buffer_Write6Bytes | GenericWrite6 | 16 | 4.6528 ns | 0.3049 ns | 0.2546 ns | 4.5819 ns | 1.00 | 0.07 |
+| Buffer_Write6Bytes | GenericWrite6 | 128 | 42.3536 ns | 1.2520 ns | 1.1098 ns | 42.5458 ns | 1.00 | 0.04 |
+| Buffer_Write6Bytes | GenericWrite6 | 1024 | 315.9881 ns | 9.1374 ns | 8.1001 ns | 317.7315 ns | 1.00 | 0.04 |
+| Buffer_WriteByte | GenericWrite | 1 | 2.1183 ns | 0.0930 ns | 0.0824 ns | 2.1000 ns | 1.00 | 0.05 |
+| Buffer_WriteByte | GenericWrite | 16 | 23.6237 ns | 0.5787 ns | 0.5130 ns | 23.5442 ns | 1.00 | 0.03 |
+| Buffer_WriteByte | GenericWrite | 128 | 178.3743 ns | 6.4702 ns | 5.7356 ns | 177.3364 ns | 1.00 | 0.04 |
+| Buffer_WriteByte | GenericWrite | 1024 | 1,338.1259 ns | 56.2525 ns | 52.6187 ns | 1,335.2860 ns | 1.00 | 0.05 |
+| Buffer_WriteSpan | GenericWriteSpan | 1 | 5.3296 ns | 0.6310 ns | 0.5902 ns | 5.4628 ns | 1.01 | 0.15 |
+| Buffer_WriteSpan | GenericWriteSpan | 16 | 5.3769 ns | 0.1764 ns | 0.1564 ns | 5.3435 ns | 1.00 | 0.04 |
+| Buffer_WriteSpan | GenericWriteSpan | 128 | 10.9603 ns | 0.6302 ns | 0.5895 ns | 10.8580 ns | 1.00 | 0.07 |
+| Buffer_WriteSpan | GenericWriteSpan | 1024 | 74.8988 ns | 3.4288 ns | 3.2073 ns | 74.7084 ns | 1.00 | 0.06 |
+| Reader_ReadElement | GenericRead | 1 | 5.7619 ns | 0.4268 ns | 0.3783 ns | 5.7270 ns | 21.30 | 7.42 |
+| Reader_ReadElement | GenericRead | 16 | 13.7275 ns | 0.6686 ns | 0.6254 ns | 13.8339 ns | 1.06 | 0.06 |
+| Reader_ReadElement | GenericRead | 128 | 101.7918 ns | 3.6095 ns | 3.3763 ns | 101.0470 ns | 0.88 | 0.06 |
+| Reader_ReadElement | GenericRead | 1024 | 990.3152 ns | 64.5536 ns | 57.2251 ns | 976.3094 ns | 0.83 | 0.10 |
+| Writer_Write6Elements | GenericWrite6 | 1 | 0.8215 ns | 0.1212 ns | 0.1074 ns | 0.8038 ns | 1.51 | 0.40 |
+| Writer_Write6Elements | GenericWrite6 | 16 | 5.5148 ns | 0.2681 ns | 0.2377 ns | 5.4629 ns | 1.19 | 0.08 |
+| Writer_Write6Elements | GenericWrite6 | 128 | 54.0800 ns | 2.3778 ns | 2.2242 ns | 54.4937 ns | 1.28 | 0.06 |
+| Writer_Write6Elements | GenericWrite6 | 1024 | 358.8763 ns | 19.7130 ns | 18.4395 ns | 356.4681 ns | 1.14 | 0.06 |
+| Writer_WriteElement | GenericWrite | 1 | 2.6297 ns | 0.1400 ns | 0.1241 ns | 2.6146 ns | 1.24 | 0.07 |
+| Writer_WriteElement | GenericWrite | 16 | 25.0805 ns | 0.9024 ns | 0.8441 ns | 24.7383 ns | 1.06 | 0.04 |
+| Writer_WriteElement | GenericWrite | 128 | 207.2849 ns | 7.8322 ns | 6.9431 ns | 206.3925 ns | 1.16 | 0.05 |
+| Writer_WriteElement | GenericWrite | 1024 | 1,588.9670 ns | 54.3308 ns | 48.1629 ns | 1,603.5139 ns | 1.19 | 0.06 |
+| Writer_WriteSpan | GenericWriteSpan | 1 | 4.6352 ns | 0.2343 ns | 0.2077 ns | 4.6672 ns | 0.88 | 0.10 |
+| Writer_WriteSpan | GenericWriteSpan | 16 | 5.1487 ns | 0.5346 ns | 0.5001 ns | 4.9939 ns | 0.96 | 0.09 |
+| Writer_WriteSpan | GenericWriteSpan | 128 | 9.7731 ns | 0.3924 ns | 0.3670 ns | 9.8813 ns | 0.89 | 0.06 |
+| Writer_WriteSpan | GenericWriteSpan | 1024 | 70.6889 ns | 2.5151 ns | 2.2296 ns | 70.6142 ns | 0.95 | 0.05 |
 
 ## Int16Benchmark
 

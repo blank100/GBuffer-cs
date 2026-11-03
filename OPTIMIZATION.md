@@ -139,6 +139,8 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 | Boolean | 3,308 ns → **1,577 ns** | 1,251 ns | 3,792 ns | 2.1x 改善，与 ByteArray 差 1.26x |
 | Int8 / UInt8 | 1,392 / 1,365 ns → **1,470 / 1,459 ns** | 1,275 / 1,283 ns | 4,973 / 3,841 ns | 与 ByteArray 同量级（噪声内） |
 
+> 连带收益：`GenericWriteBenchmark.Buffer_WriteByte`（内部就是 `WriteUInt8`）1,462 → **1,338 ns**（−8.5%）。
+
 `Writer<byte>` 侧同步受益（`ReaderWriterBenchmark`，N=1024）：
 `Writer_WriteInt32` 1,544 ns、`Writer_WriteInt64` 1,736 ns、`Writer_WriteDouble` 1,775 ns
 ——优化前 `Writer<byte>` 比 `Buffer<byte>` 还慢约 1.8x，现在两者同量级。

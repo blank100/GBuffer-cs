@@ -9,84 +9,84 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteInt8(this IWriter<byte> self, sbyte value) {
+        public static void WriteInt8<T>(this T self, sbyte value) where T : IWriter<byte> {
             self.Write((byte)value);
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteUInt8(this IWriter<byte> self, byte value) {
+        public static void WriteUInt8<T>(this T self, byte value) where T : IWriter<byte> {
             self.Write(value);
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteBoolean(this IWriter<byte> self, bool value) {
+        public static void WriteBoolean<T>(this T self, bool value) where T : IWriter<byte> {
             self.Write(value ? (byte)1 : (byte)0);
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteUInt16(this IWriter<byte> self, ushort value) {
+        public static void WriteUInt16<T>(this T self, ushort value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteUInt16(self.GetSpan(sizeof(ushort)), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteInt16(this IWriter<byte> self, short value) {
+        public static void WriteInt16<T>(this T self, short value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteInt16(self.GetSpan(sizeof(short)), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteInt32(this IWriter<byte> self, Int32 value) {
+        public static void WriteInt32<T>(this T self, Int32 value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteInt32(self.GetSpan(4), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteUInt32(this IWriter<byte> self, UInt32 value) {
+        public static void WriteUInt32<T>(this T self, UInt32 value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteUInt32(self.GetSpan(4), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteInt64(this IWriter<byte> self, Int64 value) {
+        public static void WriteInt64<T>(this T self, Int64 value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteInt64(self.GetSpan(8), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteUInt64(this IWriter<byte> self, UInt64 value) {
+        public static void WriteUInt64<T>(this T self, UInt64 value) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteUInt64(self.GetSpan(8), value, false));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteFloat(this IWriter<byte> self, float value, bool bigEndian = false) {
+        public static void WriteFloat<T>(this T self, float value, bool bigEndian = false) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteFloat(self.GetSpan(sizeof(float)), value, bigEndian));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteDouble(this IWriter<byte> self, double value, bool bigEndian = false) {
+        public static void WriteDouble<T>(this T self, double value, bool bigEndian = false) where T : IWriter<byte> {
             self.Advance(SpanByteUtils.WriteDouble(self.GetSpan(sizeof(double)), value, bigEndian));
 
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteVarUInt32(this IWriter<byte> self, uint value) {
+        public static void WriteVarUInt32<T>(this T self, uint value) where T : IWriter<byte> {
             if (self.WritableCount >= 5) {
                 self.Advance(SpanByteUtils.WriteVarUInt32(self.Span, value));
             } else {
@@ -98,7 +98,7 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteVarInt32(this IWriter<byte> self, int value) {
+        public static void WriteVarInt32<T>(this T self, int value) where T : IWriter<byte> {
             if (self.WritableCount >= 5) {
                 self.Advance(SpanByteUtils.WriteVarInt32(self.Span, value));
             } else {
@@ -110,7 +110,7 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteVarUInt64(this IWriter<byte> self, ulong value) {
+        public static void WriteVarUInt64<T>(this T self, ulong value) where T : IWriter<byte> {
             if (self.WritableCount >= 10) {
                 self.Advance(SpanByteUtils.WriteVarUInt64(self.Span, value));
             } else {
@@ -122,7 +122,7 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteVarInt64(this IWriter<byte> self, long value) {
+        public static void WriteVarInt64<T>(this T self, long value) where T : IWriter<byte> {
             if (self.WritableCount >= 10) {
                 self.Advance(SpanByteUtils.WriteVarInt64(self.Span, value));
             } else {
@@ -134,7 +134,7 @@ namespace Gal.Core {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteUtf8(this IWriter<byte> self, string value, bool bigEndian = false) {
+        public static void WriteUtf8<T>(this T self, string value, bool bigEndian = false) where T : IWriter<byte> {
             if (string.IsNullOrEmpty(value)) {
                 self.Advance(SpanByteUtils.WriteUtf8(self.GetSpan(sizeof(ushort)), value, bigEndian));
                 return;

@@ -7,7 +7,7 @@
 using System.Runtime.InteropServices;
 
 namespace Gal.Core {
-    public static class WriterByteEx {
+    public static partial class WriterByteEx {
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -9,7 +9,7 @@
 | # | 原始现象 | 处理方式 | 处理前 | 处理后 |
 |---|---|---|---:|---:|
 | 1 | `Span_ReadUtf8BE` 比 `Manual_ReadUtf8BE` 慢 369x | **改基准**（库代码无缺陷） | 369x | **0.98x** |
-| 2 | `Buffer_WriteDoubleBE` 比手写大端慢 5.98x | **改库**：新增具体类型写入重载 | 5.98x | **1.90x** |
+| 2 | `Buffer_WriteDoubleBE` 比手写大端慢 5.98x | **改库**：新增具体类型写入重载 | 5.98x | **2.05x** |
 | 3 | `Buffer_WriteInt16` 慢于 `ByteArray_WriteInt16` 1.92x | **改库**：同一处改动 | 1.92x 慢 | **快 1.10x** |
 
 ## 二、改动清单（共 3 个文件）
@@ -119,8 +119,8 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 
 | Method | 改动前 | 改动后 |
 |---|---:|---:|
-| `Buffer_ReadDouble`（读端未改，噪声参照） | 1,131.3 ns | 1,483.4 ns |
-| `Buffer_WriteDouble` | 3,080.9 ns | **1,684.5 ns** |
+| `Buffer_ReadDouble`（读端未改，噪声参照） | 1,131.3 ns | 1,431.0 ns |
+| `Buffer_WriteDouble` | 3,080.9 ns | **1,767.1 ns** |
 
 **全量复跑（544 个 case，18 个基准类，41 分 47 秒）——所有定长写路径**
 
@@ -148,7 +148,7 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 | `Manual_ReadUtf8BE_LengthOnly` | — | 2,989.7 ns (0.07) |
 | `Span_ReadUtf8BE` | 1,008,437.2 ns (**369.78x**) | **40,924.2 ns (0.97x)** |
 
-> 注意 `Manual_ReadUtf8BE` 的绝对耗时从 2.7 µs 变成 42.6 µs 并不是它变慢了，而是它现在**真的做解码**了。
+> 注意 `Manual_ReadUtf8BE` 的绝对耗时从 2.7 µs 变成 42.3 µs 并不是它变慢了，而是它现在**真的做解码**了。
 > 对比基准必须是同一件事：库的 `ReadUtf8` 现在与手写解码等价（0.98x），
 > “只读长度前缀”的成本则单独由 `Manual_ReadUtf8BE_LengthOnly` 给出（0.07x）。
 
@@ -156,7 +156,7 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 
 | 事项 | 说明 |
 |---|---|
-| `Buffer_WriteDoubleBE` 还剩 1.90x | 剩余差距来自仍保留的 `GetSpan`/`Advance` 往返。若要继续收，需引入批量写入口（`PatchC_BatchSpan` 方案实测可到 1.02x），属于 API 变更，未在本次实施。 |
+| `Buffer_WriteDoubleBE` 还剩 2.05x | 剩余差距来自仍保留的 `GetSpan`/`Advance` 往返。若要继续收，需引入批量写入口（`PatchC_BatchSpan` 方案实测可到 1.02x），属于 API 变更，未在本次实施。 |
 | `WriteBoolean` 慢 2.4x（新发现，同类问题） | `ByteBenchmark`（N=1024）：`Buffer_WriteBoolean` **3,315.3 ns** vs `ByteArray_WriteBoolean` 1,298.9 ns（2.55x），而 `Buffer_WriteInt8` 只要 1,391.8 ns。原因是 `WriteBoolean<T>` 内部走 `self.Write(byte)` 接口调用，没走 `SpanByteUtils` 直写。修法与本次完全相同（加 `WriteBoolean(this Buffer<byte>/Writer<byte>, bool)` 具体重载），但**不在本次三项问题范围内**，未实施。 |
 | `Byte` / `VarInt` 写 | 未改。`Buffer_WriteUInt8` 1,365.4 ns、`Buffer_WriteInt8` 1,391.8 ns，均已优于 `BinaryWriter`（3,918 / 3,761 ns），不属问题。 |
 | `Writer<byte>` 非 sealed | `DIAGNOSIS.md` §四 提到 `Writer<byte>` 比 `Buffer<byte>` 还慢 1.8x，源于去虚化受限。改 sealed 会破坏继承关系，未实施；但新增的具体重载同样作用于 `Writer<byte>`，已获得同等收益。 |

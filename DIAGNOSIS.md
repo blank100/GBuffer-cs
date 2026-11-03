@@ -273,12 +273,12 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 
 **在仓库原始基准上重跑（未改动任何基准代码），同一台机器、同一 Job：**
 
-| 基准 | 补丁前（全量跑） | 补丁前（原始源码复跑） | 已应用（融合快路径） | 变化 |
+| 基准 | 补丁前（全量跑） | 补丁前（原始源码复跑） | 已应用（全量复跑） | 变化 |
 |---|---:|---:|---:|---:|
-| `Buffer_WriteInt16` | 2,997.4 ns | — | **1,456.6 ns** | **−51.4%** |
-| `ByteArray_WriteInt16`（对照，无关） | 1,563.0 ns | — | 1,603.2 ns | 噪声 |
-| `Buffer_WriteDouble` | 3,080.9 ns | 2,946.1 ns | **1,684.5 ns** | **−45.3%**（对复跑值 −42.8%） |
-| `Buffer_ReadDouble`（对照，读端未改） | 1,131.3 ns | 1,554.2 ns | 1,483.4 ns | 同一份未改代码在多次跑批中 1,131 / 1,554 / 1,488 / 1,483 ns → 确认是噪声 |
+| `Buffer_WriteInt16` | 2,997.4 ns | — | **1,492.7 ns** | **−50.2%** |
+| `ByteArray_WriteInt16`（对照，无关） | 1,563.0 ns | — | 1,634.1 ns | 噪声 |
+| `Buffer_WriteDouble` | 3,080.9 ns | 2,946.1 ns | **1,767.1 ns** | **−42.6%**（对复跑值 −40.0%） |
+| `Buffer_ReadDouble`（对照，读端未改） | 1,131.3 ns | 1,554.2 ns | 1,431.0 ns | 同一份未改代码在多次跑批中 1,131 / 1,554 / 1,488 / 1,483 / 1,431 ns → 确认是噪声 |
 
 已应用版本 **`Buffer_WriteInt16`（1,493 ns）反超 `ByteArray_WriteInt16`（1,634 ns）**，
 第 3 项现象消失；`Buffer_WriteDouble` 从 3,081 ns 降到 1,767 ns。
@@ -350,11 +350,11 @@ Buffer_WriteInt16    ：  GetSpan(2) → HintSize(2) 容量检查 → 构造 Spa
 
 补具体重载后（同 §2.5）：
 
-| 基准 | 补丁前 | 已应用（融合快路径） | 变化 |
+| 基准 | 补丁前 | 已应用（全量复跑） | 变化 |
 |---|---:|---:|---:|
-| `Buffer_WriteInt16` | 2,997.4 ns | **1,456.6 ns** | −51.4% |
-| `ByteArray_WriteInt16` | 1,563.0 ns | 1,603.2 ns | +2.6%（噪声，无关代码） |
-| 相对关系 | Buffer 慢 **1.92x** | Buffer 快 **1.10x** | 现象消失 |
+| `Buffer_WriteInt16` | 2,997.4 ns | **1,492.7 ns** | −50.2% |
+| `ByteArray_WriteInt16` | 1,563.0 ns | 1,634.1 ns | +4.5%（噪声，无关代码） |
+| 相对关系 | Buffer 慢 **1.92x** | Buffer 快 **1.09x** | 现象消失 |
 
 **`Buffer` 反超 `ByteArray`**，说明 `Buffer<byte>` 底层的 `SpanByteUtils` 实现本身没有问题，
 “慢”完全来自它外面那层写入器 API。
@@ -393,12 +393,16 @@ dotnet bin/Release/net8.0/Probe.Benchmark.dll --filter '*CallPathProbe*' -d   # 
 | 文件 | 内容 |
 |---|---|
 | `DIAGNOSIS.md` | 本报告 |
-| `BENCHMARKS.md` / `ENVIRONMENT.md` | 全量 540 个基准的原始结果与环境信息 |
-| `proposed-writer-concrete-overloads.patch` | **POC 补丁原文（67 行，未提交到库源码，供评审）**，`git apply --check` 通过 |
-| `patched-results/Int16Benchmark-report.csv` | 应用补丁后 `Int16` 基准结果（`Buffer_WriteInt16` 1,503 ns） |
-| `patched-results/DoubleBenchmark-report.csv` | 应用补丁后 `Double` 基准结果（`Buffer_WriteDouble` 1,814 ns） |
+| `OPTIMIZATION.md` | **已实施改动**的清单、验证矩阵与复现命令 |
+| `BENCHMARKS.md` / `ENVIRONMENT.md` | 全量 544 个基准的原始结果与环境信息（优化后复跑） |
+| `IWriter.Bytes.concrete-overloads.patch.txt` | 已应用改动的补丁原文（由 `git show` 生成，`git apply --check --reverse` 通过） |
+| `patched-results/Int16Benchmark-report.csv` | POC 阶段补丁的 `Int16` 结果（`Buffer_WriteInt16` 1,503 ns），仅作历史对照 |
+| `patched-results/DoubleBenchmark-report.csv` | POC 阶段补丁的 `Double` 结果（`Buffer_WriteDouble` 1,814 ns），仅作历史对照 |
 | `patched-results/DoubleBenchmark-original-src-rerun.csv` | 还原源码后的复跑结果（噪声基线对照） |
 | `/home/user/probe/BenchmarkDotNet.Artifacts/results/CallPathProbe-asm.md` | 反汇编原文（Tier1 段含 §2.3 引用的循环体） |
 | `/home/user/probe/BenchmarkDotNet.Artifacts/results/Utf8DirtyDataProbe-report.csv` | §1.3 五组对照的原始数据 |
 
-> 库源码在本轮结束时**已完全还原**（`git status` 仅剩未跟踪文档），补丁以 `.patch` 形式单独提供，未改动任何 `.cs` 文件。
+> 库源码在本轮**已应用优化**（提交 `0242af5`）：新增 `IWriter.Bytes.Concrete.cs`，
+> `IWriter.Bytes.cs` / `.tt` 改为 `partial`，并修正了 `BigEndianBenchmark` 的基准缺陷。
+> 最终数值以 `BENCHMARKS.md`（544 case 全量复跑）为准；`patched-results/` 中的 POC 数值
+> 早于融合快路径版本，仅用于说明演进过程，不作为最终结论。

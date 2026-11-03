@@ -4,6 +4,8 @@
 // </auto-generated>
 
 
+using System.Runtime.InteropServices;
+
 namespace Gal.Core {
     public static class WriterByteEx {
 
@@ -154,6 +156,21 @@ namespace Gal.Core {
                 self.Advance(SpanByteUtils.WriteUtf8(self.GetSpan(count + sizeof(ushort)), value, bigEndian));
             }
 
+        }
+
+        /// <summary>
+        /// 聚合写：一次写入整个 unmanaged struct。
+        /// <para>struct 需标记 [StructLayout(LayoutKind.Sequential, Pack = 1)] 以保证紧凑 wire 布局；</para>
+        /// <para>只能包含 unmanaged 字段（值类型/嵌套 struct/enum），string、数组等需另行写入。</para>
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Write<T, TValue>(this T self, TValue value)
+            where T : IWriter<byte>
+            where TValue : unmanaged {
+            var size = Unsafe.SizeOf<TValue>();
+            var span = self.GetSpan(size);
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(span), value);
+            self.Advance(size);
         }
 
     }

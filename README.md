@@ -31,8 +31,14 @@ WriteDouble(double)	写入双精度浮点数	8 Bytes
 字符串写入 (UTF-8)
 
     WriteUtf8(string, int bytesCount): 将字符串以 UTF-8 编码写入指定字节数长度的内存区域。
-    WriteUtf8(string): 自动计算长度并写入。格式为：[Int16 长度前缀] + [UTF-8 字节流]。
-	
+    WriteUtf8(string): 自动计算长度并写入。格式为：[UInt16 长度前缀] + [UTF-8 字节流]。
+
+聚合读写 (unmanaged struct)
+
+    Write<TValue>(TValue value) where TValue : unmanaged: 一次写入整个 struct（GetSpan + Unsafe.WriteUnaligned + Advance），写入长度为 Unsafe.SizeOf<TValue>() Bytes。
+    Read<TValue>() where TValue : unmanaged: 一次读出整个 struct（守卫检查 + Unsafe.ReadUnaligned + Advance），Reader<byte> 与 Buffer<byte> 各提供一套重载。
+    约定：struct 需标记 [StructLayout(LayoutKind.Sequential, Pack = 1)]，且只含 unmanaged 字段；按 native 小端序整体写入（与库内固定长度类型一致）；变长字段（string、数组等）请另行调用对应方法写入/读取。
+
 使用示例
 
 // 假设已有一个 RefWriter<byte> 实例 writer
@@ -47,6 +53,17 @@ writer.WriteVarInt32(-100);
 
 // 写入字符串
 writer.WriteUtf8("Hello World");
+
+// 聚合写入整个 struct（需 [StructLayout(LayoutKind.Sequential, Pack = 1)]，只含 unmanaged 字段）
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+struct MsgHeader { public int Id; public long Timestamp; public ushort Type; }
+
+var header = new MsgHeader { Id = 1, Timestamp = 123456789L, Type = 7 };
+writer.Write(header);              // 一次写入 14 Bytes（Unsafe.SizeOf<MsgHeader>()）
+
+// 对应读出（Reader<byte> / Buffer<byte> 各一套 Read<TValue>() 重载）
+var reader = new Reader<byte>(bytes);
+var h = reader.Read<MsgHeader>();  // 一次读出 14 Bytes
 ```
 
 ## 协议格式与限制
@@ -54,6 +71,7 @@ writer.WriteUtf8("Hello World");
 - 固定长度类型按小端序写入（`bigEndian: true` 可切换大端序）；VarInt 为 Base128 变长编码，带符号整数先经 ZigZag 编码
 - 字符串格式：`[UInt16 长度前缀] + [UTF-8 字节流]`，UTF-8 字节数上限为 **32767**（超过抛出 `ArgumentOutOfRangeException`）
 - 读取时若剩余字节不足（定长类型）或 VarInt 序列非法/截断，抛出 `System.IO.EndOfStreamException` / `FormatException`，不会越界读取
+- 聚合读写 `Write<TValue>` / `Read<TValue>`：要求 `TValue` 为 unmanaged 且 struct 标记 `[StructLayout(LayoutKind.Sequential, Pack = 1)]`，按 native 小端序整体写入/读出，长度等于 `Unsafe.SizeOf<TValue>()`；只含 unmanaged 字段，变长内容（string、数组等）需另行读写；剩余不足时同样抛出 `EndOfStreamException`
 - 目标框架：`netstandard2.1;net8.0`（测试与 Benchmark 为 `net8.0`）
 
 ## 视图语义说明（Buffer<T>）

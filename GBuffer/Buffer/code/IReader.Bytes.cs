@@ -5,6 +5,8 @@
 // </auto-generated>
 
 
+using System.Runtime.InteropServices;
+
 namespace Gal.Core {
     public static class ReaderByteEx {
 
@@ -131,6 +133,18 @@ namespace Gal.Core {
             return t;
         }
 
+        /// <summary>
+        /// 聚合读：一次读出整个 unmanaged struct（需与写入时 [StructLayout(LayoutKind.Sequential, Pack = 1)] 布局一致）
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TValue Read<TValue>(this Reader<byte> self) where TValue : unmanaged {
+            var size = Unsafe.SizeOf<TValue>();
+            if (self.Span.Length < size) throw new System.IO.EndOfStreamException($"Need {size} bytes, but only {self.Span.Length} remaining.");
+            var v = Unsafe.ReadUnaligned<TValue>(ref MemoryMarshal.GetReference(self.Span));
+            self.Advance(size);
+            return v;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte ReadInt8(this Buffer<byte> self) => (sbyte)self.Read();
@@ -252,6 +266,18 @@ namespace Gal.Core {
             var t = SpanByteUtils.ReadUtf8(self.Span, out var count, bigEndian);
             self.Advance(count);
             return t;
+        }
+
+        /// <summary>
+        /// 聚合读：一次读出整个 unmanaged struct（需与写入时 [StructLayout(LayoutKind.Sequential, Pack = 1)] 布局一致）
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TValue Read<TValue>(this Buffer<byte> self) where TValue : unmanaged {
+            var size = Unsafe.SizeOf<TValue>();
+            if (self.Span.Length < size) throw new System.IO.EndOfStreamException($"Need {size} bytes, but only {self.Span.Length} remaining.");
+            var v = Unsafe.ReadUnaligned<TValue>(ref MemoryMarshal.GetReference(self.Span));
+            self.Advance(size);
+            return v;
         }
 
     }

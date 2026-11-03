@@ -24,7 +24,7 @@ namespace Gal.Core
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _length;
 			set {
-				Debug.Assert(value >= 0, $"{nameof(Length)} cannot be less than 0");
+				if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Length)} cannot be less than 0");
 
 				_length = value;
 
@@ -41,7 +41,7 @@ namespace Gal.Core
 			get => _position;
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set {
-				Debug.Assert(0 <= value && value <= Buffer.Length, $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Length)}");
+				if ((uint)value > (uint)Buffer.Length) throw new ArgumentOutOfRangeException(nameof(value), $"{nameof(Position)} cannot be less than 0 or greater than {nameof(Capacity)}");
 				_position = value;
 			}
 		}
@@ -105,18 +105,15 @@ namespace Gal.Core
 		/// </summary>
 		/// <param name="element"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element) {
+		public void Write(T element) {
 			var p = _position;
-			var n = p + 1;
-
-			if (n > Buffer.Length) GrowBuffer(1);
+			HintSize(1);
 
 			Unsafe.Add(ref MemoryMarshal.GetReference<T>(Buffer), p) = element;
 
+			var n = p + 1;
 			_position = n;
 			if (n > _length) _length = n;
-
-			return this;
 		}
 
 		/// <summary>
@@ -125,7 +122,7 @@ namespace Gal.Core
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element1, T element2) {
+		public void Write(T element1, T element2) {
 			var p = _position;
 			HintSize(2);
 
@@ -137,7 +134,6 @@ namespace Gal.Core
 			_position = n;
 			if (n > _length) _length = n;
 
-			return this;
 		}
 
 		/// <summary>
@@ -147,7 +143,7 @@ namespace Gal.Core
 		/// <param name="element2"></param>
 		/// <param name="element3"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element1, T element2, T element3) {
+		public void Write(T element1, T element2, T element3) {
 			var p = _position;
 			HintSize(3);
 
@@ -160,18 +156,17 @@ namespace Gal.Core
 			_position = n;
 			if (n > _length) _length = n;
 
-			return this;
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动4位
+		/// 在当前位置写入四个元素,并将 position 向后移动4位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
 		/// <param name="element3"></param>
 		/// <param name="element4"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element1, T element2, T element3, T element4) {
+		public void Write(T element1, T element2, T element3, T element4) {
 			var p = _position;
 			HintSize(4);
 
@@ -185,11 +180,10 @@ namespace Gal.Core
 			_position = n;
 			if (n > _length) _length = n;
 
-			return this;
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动5位
+		/// 在当前位置写入五个元素,并将 position 向后移动5位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -197,7 +191,7 @@ namespace Gal.Core
 		/// <param name="element4"></param>
 		/// <param name="element5"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element1, T element2, T element3, T element4, T element5) {
+		public void Write(T element1, T element2, T element3, T element4, T element5) {
 			var p = _position;
 			HintSize(5);
 
@@ -212,11 +206,10 @@ namespace Gal.Core
 			_position = n;
 			if (n > _length) _length = n;
 
-			return this;
 		}
 
 		/// <summary>
-		/// 在当前位置写入三个元素,并将 position 向后移动6位
+		/// 在当前位置写入六个元素,并将 position 向后移动6位
 		/// </summary>
 		/// <param name="element1"></param>
 		/// <param name="element2"></param>
@@ -225,7 +218,7 @@ namespace Gal.Core
 		/// <param name="element5"></param>
 		/// <param name="element6"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(T element1, T element2, T element3, T element4, T element5, T element6) {
+		public void Write(T element1, T element2, T element3, T element4, T element5, T element6) {
 			var p = _position;
 			HintSize(6);
 
@@ -241,7 +234,6 @@ namespace Gal.Core
 			_position = n;
 			if (n > _length) _length = n;
 
-			return this;
 		}
 
 		/// <summary>
@@ -249,14 +241,16 @@ namespace Gal.Core
 		/// </summary>
 		/// <param name="elements"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(ReadOnlySpan<T> elements) {
+		public void Write(ReadOnlySpan<T> elements) {
 			var count = elements.Length;
-			if (count == 0) return this;
-			HintSize(count);
-			elements.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
-			return this;
+			if (count == 0) return;
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -264,14 +258,16 @@ namespace Gal.Core
 		/// </summary>
 		/// <param name="elements"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(ReadOnlyMemory<T> elements) {
+		public void Write(ReadOnlyMemory<T> elements) {
 			var count = elements.Length;
-			if (count == 0) return this;
-			HintSize(count);
-			elements.Span.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
-			return this;
+			if (count == 0) return;
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.Span.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -279,14 +275,16 @@ namespace Gal.Core
 		/// </summary>
 		/// <param name="elements"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Write(ReadOnlySequence<T> elements) {
+		public void Write(ReadOnlySequence<T> elements) {
 			var count = (int)elements.Length;
-			if (count == 0) return this;
-			HintSize(count);
-			elements.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
-			return this;
+			if (count == 0) return;
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -325,20 +323,18 @@ namespace Gal.Core
 		/// <para>不会真实的清理所有元素,只是将 position 和 length 置为 0 </para>
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IWriter<T> Clear() {
+		public void Clear() {
 			Length = 0;
-			return this;
 		}
 
-		public IWriter<T> Discard() {
-			if (_position <= 0) return this;
+		public void Discard() {
+			if (_position <= 0) return;
 			var l = _length - _position;
 			if (l > 0) {
 				Buffer.AsSpan(_position, l).CopyTo(Buffer.AsSpan(0));
 				_position = 0;
 				_length = l;
 			} else Clear();
-			return this;
 		}
 
 		/// <summary>

@@ -7,6 +7,7 @@ namespace Gal.Core
 	public sealed class CircularBuffer<T>
 	{
 		private readonly T[] _buffer;
+		private readonly int _mask; // capacity 为 2 的幂时为 capacity-1，否则为 -1（回退加法取模）
 		private int _head;
 		private int _tail;
 		private int _count;
@@ -33,6 +34,7 @@ namespace Gal.Core
 			if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
 
 			_buffer = new T[capacity];
+			_mask = (capacity & (capacity - 1)) == 0 ? capacity - 1 : -1;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -43,12 +45,12 @@ namespace Gal.Core
 			var capacity = _buffer.Length;
 			if (_count == capacity) {
 				if (!overwrite) return false;
-				_tail = NextIndex(_tail, capacity);
+				_tail = NextIndex(_tail);
 				_count--;
 			}
 
 			_buffer[_head] = item;
-			_head = NextIndex(_head, capacity);
+			_head = NextIndex(_head);
 			_count++;
 			return true;
 		}
@@ -70,7 +72,7 @@ namespace Gal.Core
 			item = _buffer[tail];
 			if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) _buffer[tail] = default;
 
-			_tail = NextIndex(tail, _buffer.Length);
+			_tail = NextIndex(tail);
 			_count--;
 			return true;
 		}
@@ -84,9 +86,10 @@ namespace Gal.Core
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static int NextIndex(int index, int capacity) {
+		private int NextIndex(int index) {
 			index++;
-			return index == capacity ? 0 : index;
+			// 2 的幂容量走位与（无分支取模），否则回退原逻辑
+			return _mask >= 0 ? index & _mask : (index == _buffer.Length ? 0 : index);
 		}
 	}
 }

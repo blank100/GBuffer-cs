@@ -9,7 +9,7 @@
 | # | 现象 | 是不是库的缺陷 | 真实根因 | 一句话修复 |
 |---|---|---|---|---|
 | 1 | `Span_ReadUtf8BE` 比 `Manual_ReadUtf8BE` 慢 **369x** | ❌ **不是库问题，是基准写错了** | 读端从 offset 0 开始解析，而缓冲区是 `int32+int64+double+utf8` 交错布局 → 把 int32 的高半字当成 UTF-8 长度前缀，解出 16401 字节的“垃圾串”；对比项 `Manual_*` 根本不做解码 | ✅ **已实施**（仅改基准）：数值区/utf8 区分离 + 公平解码基线 + 布局自检；**369x → 0.98x** |
-| 2 | `Buffer_WriteDoubleBE` 比 `Manual_WriteDoubleBE` 慢 **5.98x** | ✅ **是库的问题（但与“大端”无关）** | 写路径是 `泛型扩展方法 + 每次调用 GetSpan(sizeHint)/Advance`，JIT 无法去虚化，`GetSpan` 内有 430 字节含 `HintSize` 容量检查的实时代码；大端/小端开销完全相同（3,062 vs 3,067 ns） | ✅ **已实施**：给 `Buffer<byte>` / `Writer<byte>` 加**具体类型重载**（与读端 `IReader.Bytes.cs` 对称）；实测 **5.98x → 2.05x**（全量复跑），`Buffer_WriteDouble` 3,081 → 1,767 ns（−43%） |
+| 2 | `Buffer_WriteDoubleBE` 比 `Manual_WriteDoubleBE` 慢 **5.98x** | ✅ **是库的问题（但与“大端”无关）** | 写路径是 `泛型扩展方法 + 每次调用 GetSpan(sizeHint)/Advance`，JIT 无法去虚化，`GetSpan` 内有 430 字节含 `HintSize` 容量检查的实时代码；大端/小端开销完全相同（3,062 vs 3,067 ns） | ✅ **已实施**：具体类型重载把 5.98x 收到 **2.05x**；再补批量写 `WriteSpan<T>` 后，批量场景 **705.3 ns（0.97x）**，已快于手写基线 730.5 ns |
 | 3 | `Buffer_WriteInt16` 3,000 ns 慢于 `ByteArray_WriteInt16` 1,563 ns | ✅ **与 #2 同一根因** | 同上。`ByteArray` 是纯 `Span` 直写、无写入器状态机；`Buffer` 每次写都要过一遍 `GetSpan` + `Advance` + 泛型分发 | ✅ **已实施**（同 #2）；实测 **2,997 → 1,493 ns（−50%）**，已反超 `ByteArray`（1,634 ns） |
 
 > 反汇编里最关键的一行：`Extension_WriteInt16`（Tier1，430 字节）的方法体**就是基准的 for 循环本身**
@@ -288,6 +288,10 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 已补 `WriteInt8`/`WriteUInt8`/`WriteBoolean` 的具体重载（6 个），实测 `Buffer_WriteBoolean`
 **3,308 → 1,577 ns**（2.10x），与 `ByteArray`（1,251 ns）的差距从 2.64x 收到 1.26x。
 
+**追加修复（批量写）：** 新增 `WriteSpan<T>(ReadOnlySpan<T>, bool bigEndian = false)`，
+把「每元素一次 `WritableCount` 检查 + `Advance`」合并为一次。实测 `Buffer_WriteDoubleBE_Batch`
+**705.3 ns（0.97x）**，快于手写大端基线 730.5 ns；`Verify.cs` 新增 6 项批量写验证（共 31 项全通过）。
+
 **全量复跑确认（544 个 case，18 个基准类，41 分 47 秒）：** 所有定长写路径一致改善，
 `Buffer_WriteDoubleBE` 5.98x → **2.05x**，`Buffer_WriteInt16` 1,493 ns（0.17x），
 `Buffer_WriteInt32` 1,414 ns、`Buffer_WriteInt64` 1,478 ns、`Buffer_WriteDouble` 1,767 ns，
@@ -316,9 +320,10 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
    *注意*：同一程序集内若同时定义两套会触发 `CS0121` 歧义，需保证只有一处定义。
    *注意*：生成文件 `IWriter.Bytes.cs` 只允许改 `partial` 关键字，逻辑必须放在手写伴生文件里，
    否则下次 T4 重新生成会覆盖。
-2. **未实施（可选，再收 ~1.8x）** 提供批量写入口（`WriteBlock(Span<byte>)` 或
-   `ref Span<byte>` 游标 + 最后一次 `Advance`），把每字段一次 `HintSize` 降到每批一次。
-   探针 `PatchC_BatchSpan` 实测 522.2 ns（1.02x），但属于 API 变更，本次未做。
+2. **✅ 已实施（追加）** 提供批量写入口 `WriteSpan<T>(ReadOnlySpan<T> values, bool bigEndian = false)`
+   （`Buffer<byte>` 与 `Writer<byte>` 各一份），一次取 Span、连续写入、最后一次 `Advance`。
+   实测 `Buffer_WriteDoubleBE_Batch` **705.3 ns（0.97x）**，快于手写基线 `Manual_WriteDoubleBE`（730.5 ns）；
+   逐个写的 `Buffer_WriteDoubleBE` 仍为 1,767.6 ns（2.42x），批量场景应优先用 `WriteSpan`。
 3. **未实施（可选，~1.5x）** `GetSpan()` 的 `sizeHint == 0` 分支会跳过 `HintSize`；
    融合快路径已经绕过了这次调用，此项收益被 1 覆盖，无需单独处理。
 

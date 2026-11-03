@@ -245,5 +245,70 @@ namespace Gal.Core {
             }
             self.Advance(SpanByteUtils.WriteDouble(self.GetSpan(sizeof(double)), value, bigEndian));
         }
+
+        // ---- 批量写 ----
+        // 逐个 WriteXxx 时，每个元素都要做一次 WritableCount 检查 + Advance（Position 更新与长度维护）。
+        // 批量写把这两步合并成一次：一次取 Span、连续写入、最后一次 Advance。
+        // 探针实测：Int16 批量写 522.2 ns vs 逐个 3,073.9 ns（1.02x 于纯 Span 循环）。
+
+        /// <summary>
+        /// 批量写：一次取 Span、连续写入多个 unmanaged 值、最后一次 Advance。
+        /// <para>适合数组/列表批量落盘；<paramref name="bigEndian"/> 为 true 时按元素大小逐字节反转。</para>
+        /// <para>1 字节类型（byte/sbyte/bool）不受端序影响，走最快的 memcpy 路径。</para>
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteSpan<T>(this Buffer<byte> self, ReadOnlySpan<T> values, bool bigEndian = false)
+            where T : unmanaged {
+            var total = values.Length * Unsafe.SizeOf<T>();
+            if (self.WritableCount >= total) {
+                WriteValues(self.Span, values, bigEndian);
+                self.Advance(total);
+                return;
+            }
+            var span = self.GetSpan(total);
+            WriteValues(span, values, bigEndian);
+            self.Advance(total);
+        }
+
+        /// <summary><see cref="WriteSpan{T}(Buffer{byte}, ReadOnlySpan{T}, bool)"/> 的 Writer&lt;byte&gt; 版本。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteSpan<T>(this Writer<byte> self, ReadOnlySpan<T> values, bool bigEndian = false)
+            where T : unmanaged {
+            var total = values.Length * Unsafe.SizeOf<T>();
+            if (self.WritableCount >= total) {
+                WriteValues(self.Span, values, bigEndian);
+                self.Advance(total);
+                return;
+            }
+            var span = self.GetSpan(total);
+            WriteValues(span, values, bigEndian);
+            self.Advance(total);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void WriteValues<T>(Span<byte> dst, ReadOnlySpan<T> values, bool bigEndian) where T : unmanaged {
+            var size = Unsafe.SizeOf<T>();
+            if (!bigEndian || size == 1) {
+                MemoryMarshal.Cast<T, byte>(values).CopyTo(dst);
+                return;
+            }
+            ref byte refByte = ref MemoryMarshal.GetReference(dst);
+            for (int i = 0; i < values.Length; i++) {
+                var v = values[i];
+                var offset = i * size;
+                if (size == 2) {
+                    var x = Unsafe.As<T, ushort>(ref v);
+                    Unsafe.WriteUnaligned(ref Unsafe.Add(ref refByte, offset), BinaryPrimitives.ReverseEndianness(x));
+                } else if (size == 4) {
+                    var x = Unsafe.As<T, uint>(ref v);
+                    Unsafe.WriteUnaligned(ref Unsafe.Add(ref refByte, offset), BinaryPrimitives.ReverseEndianness(x));
+                } else if (size == 8) {
+                    var x = Unsafe.As<T, ulong>(ref v);
+                    Unsafe.WriteUnaligned(ref Unsafe.Add(ref refByte, offset), BinaryPrimitives.ReverseEndianness(x));
+                } else {
+                    Unsafe.WriteUnaligned(ref Unsafe.Add(ref refByte, offset), v);
+                }
+            }
+        }
     }
 }

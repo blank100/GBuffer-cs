@@ -21,6 +21,7 @@ public class BigEndianBenchmark {
     private const double DoubleValue = 3.141592653589793;
     private const string Utf8Value = "Hello, 大端世界! 🌍";
     private const int MaxN = 4096;
+    private double[] _doubleValues;
 
     [Params(1, 16, 128, 1024)] public int N;
 
@@ -30,6 +31,8 @@ public class BigEndianBenchmark {
         _buffer = new Buffer<byte>(size);
         _manualWrite = new byte[size];
         _spanRead = new byte[size];
+        _doubleValues = new double[MaxN];
+        for (int i = 0; i < MaxN; i++) _doubleValues[i] = DoubleValue;
 
         // 预填充读端数据（大端布局）
         // 注意：数值类型与 utf8 必须各自独占一块连续区域。
@@ -124,6 +127,15 @@ public class BigEndianBenchmark {
         _buffer.Position = 0;
         for (int i = 0; i < N; i++)
             _buffer.WriteDouble(DoubleValue, bigEndian: true);
+        return _buffer.Position;
+    }
+
+    // 批量写：一次取 Span、连续写 N 个 double、最后一次 Advance
+    [Benchmark]
+    [BenchmarkCategory("WriteDoubleBE")]
+    public long Buffer_WriteDoubleBE_Batch() {
+        _buffer.Position = 0;
+        _buffer.WriteSpan<double>(_doubleValues.AsSpan(0, N), bigEndian: true);
         return _buffer.Position;
     }
 

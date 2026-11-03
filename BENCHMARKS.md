@@ -80,7 +80,9 @@
 - `Span_WriteInt32BE` 0.72x、`Span_WriteInt64BE` 0.98x：与 `BinaryPrimitives` 手写大端同量级或更快。
 - `Span_ReadInt32BE` 1.17x、`Span_ReadDoubleBE` 1.50x：大端读仍比手写慢 17–50%（`ReverseEndianness` + 非对齐读的组合有优化空间）。
 - ✅ `Buffer_WriteDoubleBE` 从 **5.98x** 降到 **2.05x**（1,347 vs 656 ns）——第 2 项问题已收敛；
-  剩余差距来自仍保留的 `GetSpan`/`Advance` 往返，需批量写 API 才能继续收（未实施）。
+  再补批量写 `WriteSpan<T>` 后，`Buffer_WriteDoubleBE_Batch` 达到 **705.3 ns（0.97x）**，
+  已**快于**手写大端基线 `Manual_WriteDoubleBE`（730.5 ns）。
+  逐个写的 `Buffer_WriteDoubleBE` 仍为 1,767.6 ns（2.42x），批量场景应优先用 `WriteSpan`。
 
 ### CircularBuffer vs Queue
 
@@ -133,66 +135,18 @@
 
 | Method | Categories | N | Mean | Error | StdDev | Median | Ratio | RatioSD |
 |---|---|---|---|---|---|---|---|---|
-| Buffer_WriteDoubleBE | WriteDoubleBE | 1 | 2.1024 ns | 0.0959 ns | 0.0850 ns | 2.1002 ns | 8.75 | 2.77 |
-| Buffer_WriteDoubleBE | WriteDoubleBE | 16 | 24.8001 ns | 1.7280 ns | 1.6164 ns | 25.2487 ns | 2.93 | 0.19 |
-| Buffer_WriteDoubleBE | WriteDoubleBE | 128 | 179.6649 ns | 10.8643 ns | 10.1625 ns | 179.7567 ns | 2.24 | 0.14 |
-| Buffer_WriteDoubleBE | WriteDoubleBE | 1024 | 1,346.9906 ns | 80.9249 ns | 71.7378 ns | 1,317.9148 ns | 2.05 | 0.11 |
-| Buffer_WriteUtf8BE | WriteUtf8BE | 1 | 23.0479 ns | 0.6556 ns | 0.5812 ns | 23.0677 ns | 0.77 | 0.04 |
-| Buffer_WriteUtf8BE | WriteUtf8BE | 16 | 363.3484 ns | 8.0725 ns | 7.1560 ns | 363.8202 ns | 0.74 | 0.02 |
-| Buffer_WriteUtf8BE | WriteUtf8BE | 128 | 2,969.6448 ns | 133.7029 ns | 125.0658 ns | 2,919.2515 ns | 0.79 | 0.04 |
-| Buffer_WriteUtf8BE | WriteUtf8BE | 1024 | 24,164.8559 ns | 556.8533 ns | 520.8809 ns | 24,089.0308 ns | 0.78 | 0.02 |
-| Manual_ReadDoubleBE | ReadDoubleBE | 1 | 0.3330 ns | 0.0490 ns | 0.0458 ns | 0.3079 ns | 1.02 | 0.19 |
-| Manual_ReadDoubleBE | ReadDoubleBE | 16 | 10.2440 ns | 0.4323 ns | 0.3832 ns | 10.2044 ns | 1.00 | 0.05 |
-| Manual_ReadDoubleBE | ReadDoubleBE | 128 | 85.0901 ns | 4.4246 ns | 4.1387 ns | 84.4428 ns | 1.00 | 0.07 |
-| Manual_ReadDoubleBE | ReadDoubleBE | 1024 | 689.7522 ns | 31.7305 ns | 26.4964 ns | 686.4653 ns | 1.00 | 0.05 |
-| Manual_ReadInt32BE | ReadInt32BE | 1 | 0.2259 ns | 0.0923 ns | 0.0863 ns | 0.2076 ns | 1.18 | 0.73 |
-| Manual_ReadInt32BE | ReadInt32BE | 16 | 8.8226 ns | 0.3661 ns | 0.3424 ns | 8.7574 ns | 1.00 | 0.05 |
-| Manual_ReadInt32BE | ReadInt32BE | 128 | 79.3258 ns | 1.1950 ns | 1.1178 ns | 79.1749 ns | 1.00 | 0.02 |
-| Manual_ReadInt32BE | ReadInt32BE | 1024 | 639.2491 ns | 10.7100 ns | 9.4942 ns | 638.5129 ns | 1.00 | 0.02 |
-| Manual_ReadUtf8BE | ReadUtf8BE | 1 | 42.7411 ns | 1.6660 ns | 1.3912 ns | 42.5077 ns | 1.001 | 0.04 |
-| Manual_ReadUtf8BE | ReadUtf8BE | 16 | 691.4317 ns | 27.4630 ns | 25.6889 ns | 680.0013 ns | 1.00 | 0.05 |
-| Manual_ReadUtf8BE | ReadUtf8BE | 128 | 5,501.4895 ns | 284.6961 ns | 266.3049 ns | 5,536.7945 ns | 1.00 | 0.07 |
-| Manual_ReadUtf8BE | ReadUtf8BE | 1024 | 42,316.8358 ns | 1,942.9809 ns | 1,817.4656 ns | 41,605.1909 ns | 1.00 | 0.06 |
-| Manual_ReadUtf8BE_LengthOnly | ReadUtf8BE | 1 | 0.3563 ns | 0.0773 ns | 0.0723 ns | 0.3208 ns | 0.008 | 0.00 |
-| Manual_ReadUtf8BE_LengthOnly | ReadUtf8BE | 16 | 26.5148 ns | 0.8841 ns | 0.8270 ns | 26.5767 ns | 0.04 | 0.00 |
-| Manual_ReadUtf8BE_LengthOnly | ReadUtf8BE | 128 | 346.8958 ns | 7.8726 ns | 7.3640 ns | 344.2450 ns | 0.06 | 0.00 |
-| Manual_ReadUtf8BE_LengthOnly | ReadUtf8BE | 1024 | 2,989.7194 ns | 82.2882 ns | 76.9724 ns | 2,995.3239 ns | 0.07 | 0.00 |
-| Manual_WriteDoubleBE | WriteDoubleBE | 1 | 0.2623 ns | 0.0812 ns | 0.0760 ns | 0.2805 ns | 1.09 | 0.47 |
-| Manual_WriteDoubleBE | WriteDoubleBE | 16 | 8.4749 ns | 0.1864 ns | 0.1653 ns | 8.4463 ns | 1.00 | 0.03 |
-| Manual_WriteDoubleBE | WriteDoubleBE | 128 | 80.1021 ns | 2.4949 ns | 2.3337 ns | 80.6884 ns | 1.00 | 0.04 |
-| Manual_WriteDoubleBE | WriteDoubleBE | 1024 | 655.6394 ns | 11.1424 ns | 8.6992 ns | 653.5027 ns | 1.00 | 0.02 |
-| Manual_WriteInt32BE | WriteInt32BE | 1 | 0.3698 ns | 0.1040 ns | 0.0973 ns | 0.3769 ns | 1.06 | 0.38 |
-| Manual_WriteInt32BE | WriteInt32BE | 16 | 9.1643 ns | 0.5682 ns | 0.4745 ns | 9.0849 ns | 1.00 | 0.07 |
-| Manual_WriteInt32BE | WriteInt32BE | 128 | 80.8253 ns | 1.9715 ns | 1.7477 ns | 81.4910 ns | 1.00 | 0.03 |
-| Manual_WriteInt32BE | WriteInt32BE | 1024 | 657.1129 ns | 17.0556 ns | 15.1193 ns | 654.9090 ns | 1.00 | 0.03 |
-| Manual_WriteInt64BE | WriteInt64BE | 1 | 0.2962 ns | 0.1082 ns | 0.1012 ns | 0.2469 ns | 1.10 | 0.49 |
-| Manual_WriteInt64BE | WriteInt64BE | 16 | 8.9979 ns | 0.4089 ns | 0.3625 ns | 8.9731 ns | 1.00 | 0.05 |
-| Manual_WriteInt64BE | WriteInt64BE | 128 | 81.8315 ns | 2.1996 ns | 2.0575 ns | 81.3190 ns | 1.00 | 0.03 |
-| Manual_WriteInt64BE | WriteInt64BE | 1024 | 659.0009 ns | 20.9372 ns | 18.5603 ns | 653.2752 ns | 1.00 | 0.04 |
-| Manual_WriteUtf8BE | WriteUtf8BE | 1 | 29.9384 ns | 1.5177 ns | 1.4196 ns | 29.7581 ns | 1.00 | 0.06 |
-| Manual_WriteUtf8BE | WriteUtf8BE | 16 | 491.0518 ns | 12.8394 ns | 12.0100 ns | 490.7331 ns | 1.00 | 0.03 |
-| Manual_WriteUtf8BE | WriteUtf8BE | 128 | 3,751.4258 ns | 99.4650 ns | 83.0578 ns | 3,710.7932 ns | 1.00 | 0.03 |
-| Manual_WriteUtf8BE | WriteUtf8BE | 1024 | 30,835.1074 ns | 808.9598 ns | 756.7015 ns | 30,951.8335 ns | 1.00 | 0.03 |
-| Span_ReadDoubleBE | ReadDoubleBE | 1 | 0.7041 ns | 0.1019 ns | 0.0903 ns | 0.6868 ns | 2.15 | 0.38 |
-| Span_ReadDoubleBE | ReadDoubleBE | 16 | 13.8386 ns | 0.5431 ns | 0.4815 ns | 13.6723 ns | 1.35 | 0.07 |
-| Span_ReadDoubleBE | ReadDoubleBE | 128 | 122.8428 ns | 4.7834 ns | 4.2404 ns | 122.7591 ns | 1.45 | 0.08 |
-| Span_ReadDoubleBE | ReadDoubleBE | 1024 | 1,030.5978 ns | 29.6048 ns | 27.6924 ns | 1,035.1953 ns | 1.50 | 0.07 |
-| Span_ReadInt32BE | ReadInt32BE | 1 | 0.6064 ns | 0.1875 ns | 0.1754 ns | 0.5786 ns | 3.17 | 1.76 |
-| Span_ReadInt32BE | ReadInt32BE | 16 | 12.9204 ns | 0.5038 ns | 0.4466 ns | 12.9184 ns | 1.47 | 0.07 |
-| Span_ReadInt32BE | ReadInt32BE | 128 | 90.1559 ns | 4.1144 ns | 3.8486 ns | 89.3247 ns | 1.14 | 0.05 |
-| Span_ReadInt32BE | ReadInt32BE | 1024 | 750.9216 ns | 37.1859 ns | 31.0519 ns | 753.2674 ns | 1.17 | 0.05 |
-| Span_ReadUtf8BE | ReadUtf8BE | 1 | 42.8360 ns | 1.6076 ns | 1.5038 ns | 42.5223 ns | 1.003 | 0.05 |
-| Span_ReadUtf8BE | ReadUtf8BE | 16 | 679.1097 ns | 15.3095 ns | 14.3205 ns | 677.1930 ns | 0.98 | 0.04 |
-| Span_ReadUtf8BE | ReadUtf8BE | 128 | 5,384.3807 ns | 197.9652 ns | 175.4910 ns | 5,309.9369 ns | 0.98 | 0.06 |
-| Span_ReadUtf8BE | ReadUtf8BE | 1024 | 40,924.1885 ns | 675.8440 ns | 599.1181 ns | 40,980.9001 ns | 0.97 | 0.04 |
-| Span_WriteInt32BE | WriteInt32BE | 1 | 0.4507 ns | 0.1212 ns | 0.1133 ns | 0.4126 ns | 1.30 | 0.46 |
-| Span_WriteInt32BE | WriteInt32BE | 16 | 5.0864 ns | 0.3897 ns | 0.3646 ns | 5.1124 ns | 0.56 | 0.05 |
-| Span_WriteInt32BE | WriteInt32BE | 128 | 52.4910 ns | 1.5359 ns | 1.3616 ns | 52.2954 ns | 0.65 | 0.02 |
-| Span_WriteInt32BE | WriteInt32BE | 1024 | 472.0794 ns | 25.4798 ns | 23.8338 ns | 459.4982 ns | 0.72 | 0.04 |
-| Span_WriteInt64BE | WriteInt64BE | 1 | 0.3602 ns | 0.0870 ns | 0.0814 ns | 0.3699 ns | 1.34 | 0.48 |
-| Span_WriteInt64BE | WriteInt64BE | 16 | 9.3420 ns | 0.4274 ns | 0.3789 ns | 9.3267 ns | 1.04 | 0.06 |
-| Span_WriteInt64BE | WriteInt64BE | 128 | 79.5562 ns | 2.0163 ns | 1.7874 ns | 79.3308 ns | 0.97 | 0.03 |
-| Span_WriteInt64BE | WriteInt64BE | 1024 | 646.8403 ns | 13.6474 ns | 12.7657 ns | 648.7203 ns | 0.98 | 0.03 |
+| Buffer_WriteDoubleBE | WriteDoubleBE | 1 | 2.4934 ns | 0.5078 ns | 0.4750 ns | 2.2075 ns | 8.20 | 3.11 |
+| Buffer_WriteDoubleBE | WriteDoubleBE | 16 | 28.0517 ns | 1.5476 ns | 1.3719 ns | 28.0058 ns | 2.70 | 0.21 |
+| Buffer_WriteDoubleBE | WriteDoubleBE | 128 | 231.9333 ns | 16.2742 ns | 14.4266 ns | 226.9893 ns | 2.70 | 0.17 |
+| Buffer_WriteDoubleBE | WriteDoubleBE | 1024 | 1,767.5798 ns | 61.5480 ns | 54.5607 ns | 1,777.5620 ns | 2.42 | 0.09 |
+| Buffer_WriteDoubleBE_Batch | WriteDoubleBE | 1 | 2.7805 ns | 0.2296 ns | 0.1917 ns | 2.7668 ns | 9.14 | 3.05 |
+| Buffer_WriteDoubleBE_Batch | WriteDoubleBE | 16 | 11.8906 ns | 0.9865 ns | 0.7702 ns | 11.9009 ns | 1.15 | 0.10 |
+| Buffer_WriteDoubleBE_Batch | WriteDoubleBE | 128 | 90.8867 ns | 5.6153 ns | 4.6891 ns | 92.0952 ns | 1.06 | 0.06 |
+| Buffer_WriteDoubleBE_Batch | WriteDoubleBE | 1024 | 705.3171 ns | 18.1295 ns | 15.1389 ns | 708.5812 ns | 0.97 | 0.03 |
+| Manual_WriteDoubleBE | WriteDoubleBE | 1 | 0.3267 ns | 0.0842 ns | 0.0746 ns | 0.3626 ns | 1.07 | 0.43 |
+| Manual_WriteDoubleBE | WriteDoubleBE | 16 | 10.4158 ns | 0.7119 ns | 0.6311 ns | 10.6120 ns | 1.00 | 0.09 |
+| Manual_WriteDoubleBE | WriteDoubleBE | 128 | 85.8468 ns | 2.1696 ns | 1.9233 ns | 86.3811 ns | 1.00 | 0.03 |
+| Manual_WriteDoubleBE | WriteDoubleBE | 1024 | 730.4710 ns | 21.7646 ns | 18.1744 ns | 736.8707 ns | 1.00 | 0.03 |
 
 ## ByteBenchmark
 

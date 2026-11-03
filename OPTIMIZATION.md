@@ -16,7 +16,7 @@
 
 | 文件 | 类型 | 改动 |
 |---|---|---|
-| `GBuffer/Buffer/code/IWriter.Bytes.Concrete.cs` | **新增（手写）** | `Buffer<byte>` / `Writer<byte>` 的 **22 个**具体类型写入重载（11 个类型 × 2 个接收者） |
+| `GBuffer/Buffer/code/IWriter.Bytes.Concrete.cs` | **新增（手写）** | `Buffer<byte>` / `Writer<byte>` 的 **22 个**具体类型写入重载（11 个类型 × 2 个接收者）+ **批量写 `WriteSpan<T>`** |
 | `GBuffer/Buffer/code/IWriter.Bytes.cs` | 1 行 | `static class WriterByteEx` → `static partial class WriterByteEx` |
 | `GBuffer/Buffer/code/IWriter.Bytes.tt` | 2 行 | 模板同步改为 `partial`，并注明手写伴生文件 |
 | `GBuffer/Buffer.Benchmark/BigEndianBenchmark.cs` | 基准修正 | 分离数值区/utf8 区 + 公平解码基线 + 布局自检 |
@@ -85,7 +85,7 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 
 覆盖 `BufferTest` / `BufferBehaviorTest` / `ReaderTest` / `BytesReaderWriterTest` / `CircularBuffer*` / `GuardTest` / `RefBytesReaderTest`。
 
-### 3.3 专项正确性验证（25 项，全部通过）
+### 3.3 专项正确性验证（31 项，全部通过）
 
 针对新增重载单独编写（`/home/user/probe/Verify.cs`），重点验证「改写快了，但行为没变」：
 
@@ -157,11 +157,42 @@ public static void WriteInt16(this Buffer<byte> self, short value) {
 > 对比基准必须是同一件事：库的 `ReadUtf8` 现在与手写解码等价（0.98x），
 > “只读长度前缀”的成本则单独由 `Manual_ReadUtf8BE_LengthOnly` 给出（0.07x）。
 
+### 3.5 批量写 `WriteSpan<T>`（追加 API）
+
+逐个 `WriteXxx` 的剩余开销来自**每元素一次** `WritableCount` 检查 + `Advance`（Position 更新与长度维护）。
+批量写把这两步合并成一次：
+
+```csharp
+public static void WriteSpan<T>(this Buffer<byte> self, ReadOnlySpan<T> values, bool bigEndian = false)
+    where T : unmanaged;
+```
+
+实现要点：
+
+- 快路径：`WritableCount >= total` 时直接取 `self.Span`，连续写入后**一次** `Advance(total)`；
+- 慢路径：`GetSpan(total)` 走原有扩容逻辑，再写入、再 `Advance(total)`；
+- `bigEndian: true` 时按 `Unsafe.SizeOf<T>()` 分派到 2/4/8 字节的 `ReverseEndianness`；
+- 1 字节类型（`byte`/`sbyte`/`bool`）走 `MemoryMarshal.Cast<T, byte>().CopyTo` 的 memcpy 路径。
+
+实测（`BigEndianBenchmark`，N=1024，`WriteDoubleBE` 分类）：
+
+| Method | Mean | Ratio |
+|---|---:|---:|
+| `Manual_WriteDoubleBE`（手写基线） | 730.5 ns | 1.00 |
+| `Buffer_WriteDoubleBE`（逐个写，未改） | 1,767.6 ns | 2.42 |
+| **`Buffer_WriteDoubleBE_Batch`（`WriteSpan`）** | **705.3 ns** | **0.97** |
+
+即批量写不仅补上了 2.42x 的差距，还**略快于**手写大端循环（少一次循环内的 `Slice`/边界处理）。
+
+正确性（`Verify.cs` 新增 6 项，共 31 项）：小端/大端 `double` 回读一致、大端 `int32` 回读一致、
+`capacity = 8` 时写 100 个 double 扩容后数据完整、1 字节 `byte` 数组回读一致、
+`Writer<byte>.WriteSpan` 大端回读一致。
+
 ## 四、仍未处理的事项
 
 | 事项 | 说明 |
 |---|---|
-| `Buffer_WriteDoubleBE` 还剩 2.05x | 剩余差距来自仍保留的 `GetSpan`/`Advance` 往返。若要继续收，需引入批量写入口（`PatchC_BatchSpan` 方案实测可到 1.02x），属于 API 变更，未在本次实施。 |
+| ~~`Buffer_WriteDoubleBE` 还剩 2.05x~~ **已修复** | 新增批量写 `WriteSpan<T>(ReadOnlySpan<T>, bool bigEndian)`：一次取 Span、连续写入、最后一次 `Advance`。实测 `Buffer_WriteDoubleBE_Batch` **705.3 ns（0.97x）**，已**快于**手写大端基线 `Manual_WriteDoubleBE`（730.5 ns）。逐个写的 `Buffer_WriteDoubleBE` 仍为 1,767.6 ns（2.42x），批量场景应优先用 `WriteSpan`。 |
 | ~~`WriteBoolean` 慢 2.4x~~ **已修复** | 曾发现 `Buffer_WriteBoolean` 3,308 ns vs `ByteArray` 1,251 ns（2.64x），而 `WriteUInt8` 只要 1,459 ns。原因是 `WriteBoolean<T>` 内部走 `self.Write(byte)` 接口约束调用。已补 `WriteInt8`/`WriteUInt8`/`WriteBoolean` 的具体重载（共 6 个），实测 `Buffer_WriteBoolean` **3,308 → 1,577 ns**（2.10x），与 `ByteArray` 的差距从 2.64x 收到 1.26x。 |
 | `Byte` / `VarInt` 写 | 未改。`Buffer_WriteUInt8` 1,365.4 ns、`Buffer_WriteInt8` 1,391.8 ns，均已优于 `BinaryWriter`（3,918 / 3,761 ns），不属问题。 |
 | `Writer<byte>` 非 sealed | `DIAGNOSIS.md` §四 提到 `Writer<byte>` 比 `Buffer<byte>` 还慢 1.8x，源于去虚化受限。改 sealed 会破坏继承关系，未实施；但新增的具体重载同样作用于 `Writer<byte>`，已获得同等收益。 |
@@ -180,7 +211,7 @@ dotnet build Buffer/Buffer.csproj -c Release -f netstandard2.1
 # 仓库既有 81 个单元测试（离线 xunit 兼容层）
 cd /home/user/unitrun && dotnet build -c Release && dotnet bin/Release/net8.0/UnitRun.dll
 
-# 专项正确性验证（25 项）
+# 专项正确性验证（31 项）
 cd /home/user/probe && dotnet bin/Release/net8.0/Probe.Benchmark.dll --verify
 
 # 性能

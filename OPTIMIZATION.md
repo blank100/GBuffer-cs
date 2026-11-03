@@ -192,9 +192,10 @@ public static void WriteSpan<T>(this Buffer<byte> self, ReadOnlySpan<T> values, 
 
 | 事项 | 说明 |
 |---|---|
-| ~~`Buffer_WriteDoubleBE` 还剩 2.05x~~ **已修复** | 新增批量写 `WriteSpan<T>(ReadOnlySpan<T>, bool bigEndian)`：一次取 Span、连续写入、最后一次 `Advance`。实测 `Buffer_WriteDoubleBE_Batch` **705.3 ns（0.97x）**，已**快于**手写大端基线 `Manual_WriteDoubleBE`（730.5 ns）。逐个写的 `Buffer_WriteDoubleBE` 仍为 1,767.6 ns（2.42x），批量场景应优先用 `WriteSpan`。 |
+| ~~`Buffer_WriteDoubleBE` 还剩 2.05x~~ **已修复** | 新增批量写 `WriteSpan<T>(ReadOnlySpan<T>, bool bigEndian)`：一次取 Span、连续写入、最后一次 `Advance`。实测 `Buffer_WriteDoubleBE_Batch` **720.3 ns（0.97x）**，已**快于**手写大端基线 `Manual_WriteDoubleBE`（745.2 ns）。逐个写的 `Buffer_WriteDoubleBE` 仍为 1,763.1 ns（2.37x），批量场景应优先用 `WriteSpan`。 |
 | ~~`WriteBoolean` 慢 2.4x~~ **已修复** | 曾发现 `Buffer_WriteBoolean` 3,308 ns vs `ByteArray` 1,251 ns（2.64x），而 `WriteUInt8` 只要 1,459 ns。原因是 `WriteBoolean<T>` 内部走 `self.Write(byte)` 接口约束调用。已补 `WriteInt8`/`WriteUInt8`/`WriteBoolean` 的具体重载（共 6 个），实测 `Buffer_WriteBoolean` **3,308 → 1,577 ns**（2.10x），与 `ByteArray` 的差距从 2.64x 收到 1.26x。 |
-| `Byte` / `VarInt` 写 | 未改。`Buffer_WriteUInt8` 1,365.4 ns、`Buffer_WriteInt8` 1,391.8 ns，均已优于 `BinaryWriter`（3,918 / 3,761 ns），不属问题。 |
+| `Span_ReadDoubleBE` 1.32x、`Span_ReadInt32BE` 1.43x | 读侧大端仍比手写基线慢 30–43%。差距来自库侧多出的 `EndOfStreamException` 长度检查（手写基线不做检查）。试过用 `BinaryPrimitives.ReadInt32BigEndian`/`ReadDoubleBigEndian` 等 intrinsic 替代手动 `ReverseEndianness`，实测**无收益**（`ReadInt32BE` 反而 751 → 1,006 ns），已回退。属读侧、不在本次三项问题范围。 |
+| `Byte` / `VarInt` 写 | 已覆盖 1 字节类型：`Buffer_WriteUInt8` 1,459 ns、`Buffer_WriteInt8` 1,470 ns、`Buffer_WriteBoolean` 1,577 ns，均优于 `BinaryWriter`（3,841 / 4,973 / 3,792 ns）。`VarInt` 写本来就快（0.38–0.80x），未改。 |
 | `Writer<byte>` 非 sealed | `DIAGNOSIS.md` §四 提到 `Writer<byte>` 比 `Buffer<byte>` 还慢 1.8x，源于去虚化受限。改 sealed 会破坏继承关系，未实施；但新增的具体重载同样作用于 `Writer<byte>`，已获得同等收益。 |
 | 第 1 项的异常值本身 | 属基准缺陷，已在基准侧修正，**库代码未做任何改动**（`SpanByteUtils.ReadUtf8` 一行未改）。 |
 

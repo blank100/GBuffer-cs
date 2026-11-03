@@ -87,8 +87,9 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteVarUInt32<T>(this T self, uint value) where T : IWriter<byte> {
-            if (self.WritableCount >= 5) {
-                self.Advance(SpanByteUtils.WriteVarUInt32(self.Span, value));
+            var span = self.Span;
+            if (span.Length >= 5) {
+                self.Advance(SpanByteUtils.WriteVarUInt32(span, value));
             } else {
                 var size = SpanByteUtils.GetVarUInt32Size(value);
                 self.Advance(SpanByteUtils.WriteVarUInt32(self.GetSpan(size), value));
@@ -99,8 +100,9 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteVarInt32<T>(this T self, int value) where T : IWriter<byte> {
-            if (self.WritableCount >= 5) {
-                self.Advance(SpanByteUtils.WriteVarInt32(self.Span, value));
+            var span = self.Span;
+            if (span.Length >= 5) {
+                self.Advance(SpanByteUtils.WriteVarInt32(span, value));
             } else {
                 var size = SpanByteUtils.GetVarInt32Size(value);
                 self.Advance(SpanByteUtils.WriteVarInt32(self.GetSpan(size), value));
@@ -111,8 +113,9 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteVarUInt64<T>(this T self, ulong value) where T : IWriter<byte> {
-            if (self.WritableCount >= 10) {
-                self.Advance(SpanByteUtils.WriteVarUInt64(self.Span, value));
+            var span = self.Span;
+            if (span.Length >= 10) {
+                self.Advance(SpanByteUtils.WriteVarUInt64(span, value));
             } else {
                 var size = SpanByteUtils.GetVarUInt64Size(value);
                 self.Advance(SpanByteUtils.WriteVarUInt64(self.GetSpan(size), value));
@@ -123,8 +126,9 @@ namespace Gal.Core {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteVarInt64<T>(this T self, long value) where T : IWriter<byte> {
-            if (self.WritableCount >= 10) {
-                self.Advance(SpanByteUtils.WriteVarInt64(self.Span, value));
+            var span = self.Span;
+            if (span.Length >= 10) {
+                self.Advance(SpanByteUtils.WriteVarInt64(span, value));
             } else {
                 var size = SpanByteUtils.GetVarInt64Size(value);
                 self.Advance(SpanByteUtils.WriteVarInt64(self.GetSpan(size), value));
@@ -141,8 +145,9 @@ namespace Gal.Core {
             }
 
             var maxLength = value.Length * 3;
-            if (self.WritableCount >= maxLength + sizeof(ushort)) {
-                self.Advance(SpanByteUtils.WriteUtf8(self.Span, value, bigEndian));
+            var span = self.Span;
+            if (span.Length >= maxLength + sizeof(ushort)) {
+                self.Advance(SpanByteUtils.WriteUtf8(span, value, bigEndian));
             } else {
                 var count = System.Text.Encoding.UTF8.GetByteCount(value);
                 if (count > short.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));

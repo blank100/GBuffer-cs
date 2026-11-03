@@ -269,10 +269,14 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(ReadOnlySpan<T> elements) {
 			var count = elements.Length;
-			if(count == 0) return;
-			HintSize(count);
-			elements.CopyTo(_span.Slice(_position));
-			Advance(count);
+			if (count == 0) return;
+			var p = _position;
+			var available = _span.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(_span.Slice(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -282,10 +286,14 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(ReadOnlyMemory<T> elements) {
 			var count = elements.Length;
-			if(count == 0) return;
-			HintSize(count);
-			elements.Span.CopyTo(_span.Slice(_position));
-			Advance(count);
+			if (count == 0) return;
+			var p = _position;
+			var available = _span.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.Span.CopyTo(_span.Slice(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -295,10 +303,14 @@ namespace Gal.Core
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(ReadOnlySequence<T> elements) {
 			var count = (int)elements.Length;
-			if(count == 0) return;
-			HintSize(count);
-			elements.CopyTo(_span.Slice(_position));
-			Advance(count);
+			if (count == 0) return;
+			var p = _position;
+			var available = _span.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(_span.Slice(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>

@@ -244,10 +244,13 @@ namespace Gal.Core
 		public void Write(ReadOnlySpan<T> elements) {
 			var count = elements.Length;
 			if (count == 0) return;
-			HintSize(count);
-			elements.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -258,10 +261,13 @@ namespace Gal.Core
 		public void Write(ReadOnlyMemory<T> elements) {
 			var count = elements.Length;
 			if (count == 0) return;
-			HintSize(count);
-			elements.Span.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.Span.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
@@ -272,10 +278,13 @@ namespace Gal.Core
 		public void Write(ReadOnlySequence<T> elements) {
 			var count = (int)elements.Length;
 			if (count == 0) return;
-			HintSize(count);
-			elements.CopyTo(Buffer.AsSpan(_position));
-			Advance(count);
-
+			var p = _position;
+			var available = Buffer.Length - p;
+			if ((uint)available < (uint)count) GrowBuffer(count - available);
+			elements.CopyTo(Buffer.AsSpan(p));
+			var n = p + count;
+			_position = n;
+			if (n > _length) _length = n;
 		}
 
 		/// <summary>
